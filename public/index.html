@@ -18,7 +18,7 @@
     <a class="brand" href="/">
       <span class="logo">◈</span>
       <span>Black<span class="brand-accent">Vault</span></span>
-      <span class="dw-tag">v3.7</span>
+      <span class="dw-tag">v3.8</span>
     </a>
 
     <button class="nav-toggle" id="navToggle" aria-label="Menu">☰</button>
@@ -68,17 +68,7 @@
   <div class="wrap">
     <div class="hero-copy">
       <h1>Everything. <span class="accent">One vault.</span></h1>
-      <p>Cards, fullz, tax packages, SBA docs, spam infra, remote ops, cashout, malware, crypto, guides. Escrowed. Verified vendors. XMR / BTC.</p>
-      <form class="search" onsubmit="return false">
-        <input id="searchInput" placeholder="fullz, SBA, tax refund, drops, cc…">
-        <button class="btn btn-primary">Search</button>
-      </form>
-      <div class="stats">
-        <div><strong id="statListings">—</strong><span>listings</span></div>
-        <div><strong id="statVendors">—</strong><span>vendors</span></div>
-        <div><strong id="statOrders">—</strong><span>orders</span></div>
-        <div><strong>$<span id="statVolume">—</span></strong><span>volume</span></div>
-      </div>
+      <p>Cards, fullz, telecom, malware, CVEs, drugs, hackers, docs, flashers, jailbreaks. Escrowed. Verified vendors. XMR / BTC.</p>
     </div>
   </div>
 </section>
@@ -88,9 +78,15 @@
 </nav>
 
 <main class="wrap" id="listings">
-  <div class="list-head">
-    <h2 id="listTitle">Trending</h2>
-    <select id="sortSel">
+  <div class="search-bar">
+    <div class="search-input-wrap">
+      <input id="searchInput" placeholder="Search 200+ listings — fullz, eSIM, RAT, CVE, drugs, hacker…" autocomplete="off">
+      <button class="search-clear" id="searchClear" style="display:none;" aria-label="Clear">×</button>
+    </div>
+    <select id="catSel" class="filter-sel">
+      <option value="">All categories</option>
+    </select>
+    <select id="sortSel" class="filter-sel">
       <option value="">Newest</option>
       <option value="sales">Best selling</option>
       <option value="rating">Top rated</option>
@@ -98,7 +94,19 @@
       <option value="price_desc">Price ↓</option>
     </select>
   </div>
+
+  <div class="filter-tags" id="filterTags"></div>
+
+  <div class="list-head">
+    <h2 id="listTitle">Trending</h2>
+    <span class="result-count" id="resultCount"></span>
+  </div>
+
   <div class="grid" id="listingGrid"></div>
+
+  <div class="load-more-wrap" id="loadMoreWrap" style="display:none;">
+    <button class="btn btn-ghost btn-lg" id="loadMoreBtn">Load more</button>
+  </div>
 </main>
 
 <footer class="foot">
@@ -118,6 +126,7 @@
 <script src="/js/wallet.js"></script>
 <script>
 (async () => {
+  // ─── auth ─────────────────────────────────────
   const me = await fetch('/api/me').then(r => r.ok ? r.json() : null).catch(() => null);
   const box = document.getElementById('userbox');
   if (me?.user) {
@@ -142,55 +151,138 @@
     }, 700);
   }
 
-  const stats = await fetch('/api/stats').then(r => r.json());
-  document.getElementById('statListings').textContent = stats.listings;
-  document.getElementById('statVendors').textContent = stats.vendors;
-  document.getElementById('statOrders').textContent = stats.orders;
-  document.getElementById('statVolume').textContent = Math.round(stats.volume).toLocaleString();
+  // ─── stats ────────────────────────────────────
+  const stats = await fetch('/api/stats').then(r => r.json()).catch(() => ({}));
+  if (stats.listings != null) {
+    const el = document.getElementById('resultCount');
+    // kept for later use
+  }
 
+  // ─── categories ───────────────────────────────
   const cats = await fetch('/api/categories').then(r => r.json()).then(r => r.categories);
+
   document.getElementById('catMenu').innerHTML = cats.map(c =>
     `<a href="/?cat=${c.slug}"><span class="ci">${c.icon || ''}</span>${c.name}<em>${c.listing_count}</em></a>`
   ).join('');
+
   document.getElementById('catStrip').innerHTML = cats.map(c =>
-    `<a class="chip" href="/?cat=${c.slug}">${c.icon || ''} ${c.name} <em>${c.listing_count}</em></a>`
+    `<a class="chip" href="/?cat=${c.slug}" data-slug="${c.slug}">${c.icon || ''} ${c.name} <em>${c.listing_count}</em></a>`
   ).join('');
 
-  // mobile nav
-  const navToggle = document.getElementById('navToggle');
-  const mobileMenu = document.getElementById('mobileMenu');
-  navToggle?.addEventListener('click', () => mobileMenu.classList.toggle('open'));
+  document.getElementById('catSel').innerHTML =
+    '<option value="">All categories</option>' +
+    cats.map(c => `<option value="${c.slug}">${c.name} (${c.listing_count})</option>`).join('');
+
   document.getElementById('mobileCatSel').innerHTML =
     '<option value="">All categories</option>' +
     cats.map(c => `<option value="${c.slug}">${c.name} (${c.listing_count})</option>`).join('');
 
-  const params = new URLSearchParams(location.search);
-  let currentCat = params.get('cat');
-  let currentQ = params.get('q') || '';
-  const grid = document.getElementById('listingGrid');
-  const titleEl = document.getElementById('listTitle');
-
-  document.getElementById('mobileCatSel').addEventListener('change', (e) => {
-    currentCat = e.target.value || null;
-    mobileMenu.classList.remove('open');
-    load();
-  });
+  // ─── mobile nav ───────────────────────────────
+  const navToggle = document.getElementById('navToggle');
+  const mobileMenu = document.getElementById('mobileMenu');
+  navToggle?.addEventListener('click', () => mobileMenu.classList.toggle('open'));
   mobileMenu.querySelectorAll('a').forEach(a =>
     a.addEventListener('click', () => mobileMenu.classList.remove('open')));
 
-  async function load() {
-    grid.innerHTML = '<div class="loading">Loading…</div>';
+  // ─── state ────────────────────────────────────
+  const params = new URLSearchParams(location.search);
+  let currentCat = params.get('cat') || '';
+  let currentQ = params.get('q') || '';
+  let currentSort = '';
+  let offset = 0;
+  const LIMIT = 40;
+  let totalLoaded = 0;
+  let hasMore = false;
+
+  const grid = document.getElementById('listingGrid');
+  const titleEl = document.getElementById('listTitle');
+  const countEl = document.getElementById('resultCount');
+  const tagWrap = document.getElementById('filterTags');
+  const loadMoreWrap = document.getElementById('loadMoreWrap');
+  const loadMoreBtn = document.getElementById('loadMoreBtn');
+  const searchInput = document.getElementById('searchInput');
+  const searchClear = document.getElementById('searchClear');
+  const catSel = document.getElementById('catSel');
+  const sortSel = document.getElementById('sortSel');
+
+  // sync UI to initial state
+  catSel.value = currentCat;
+  searchInput.value = currentQ;
+  if (currentQ) searchClear.style.display = 'block';
+
+  // ─── filter tags ──────────────────────────────
+  function renderTags() {
+    const tags = [];
+    if (currentCat) {
+      const c = cats.find(x => x.slug === currentCat);
+      if (c) tags.push({ label: `${c.icon || ''} ${c.name}`, type: 'cat' });
+    }
+    if (currentQ) tags.push({ label: `"${currentQ}"`, type: 'q' });
+    if (currentSort) {
+      const labels = { sales: 'Best selling', rating: 'Top rated', price_asc: 'Price ↑', price_desc: 'Price ↓' };
+      tags.push({ label: labels[currentSort] || currentSort, type: 'sort' });
+    }
+    if (!tags.length) { tagWrap.innerHTML = ''; return; }
+    tagWrap.innerHTML = tags.map(t =>
+      `<span class="ftag" data-type="${t.type}">${t.label} <button class="ftag-x" data-type="${t.type}">×</button></span>`
+    ).join('') + `<button class="ftag-clear">Clear all</button>`;
+
+    tagWrap.querySelectorAll('.ftag-x').forEach(b => b.addEventListener('click', () => {
+      const t = b.dataset.type;
+      if (t === 'cat') { currentCat = ''; catSel.value = ''; }
+      if (t === 'q') { currentQ = ''; searchInput.value = ''; searchClear.style.display = 'none'; }
+      if (t === 'sort') { currentSort = ''; sortSel.value = ''; }
+      reload();
+    }));
+    tagWrap.querySelector('.ftag-clear')?.addEventListener('click', () => {
+      currentCat = ''; catSel.value = '';
+      currentQ = ''; searchInput.value = ''; searchClear.style.display = 'none';
+      currentSort = ''; sortSel.value = '';
+      reload();
+    });
+  }
+
+  // ─── load ─────────────────────────────────────
+  async function fetchPage(reset = false) {
+    if (reset) { offset = 0; totalLoaded = 0; grid.innerHTML = ''; }
+    grid.insertAdjacentHTML('beforeend', '<div class="loading">Loading…</div>');
+
     const qs = new URLSearchParams();
     if (currentCat) qs.set('category', currentCat);
     if (currentQ) qs.set('q', currentQ);
-    const sort = document.getElementById('sortSel').value;
-    if (sort) qs.set('sort', sort);
+    if (currentSort) qs.set('sort', currentSort);
+    qs.set('limit', String(LIMIT));
+    qs.set('offset', String(offset));
+
     const r = await fetch('/api/listings?' + qs.toString()).then(x => x.json());
+    grid.querySelectorAll('.loading').forEach(el => el.remove());
+
     const rows = r.listings || [];
-    if (!rows.length) { grid.innerHTML = '<div class="empty">No listings match.</div>'; return; }
-    grid.innerHTML = rows.map(cardHTML).join('');
-    titleEl.textContent = currentQ ? `Search: "${currentQ}"` : (currentCat ? currentCat : 'Trending');
+    hasMore = rows.length === LIMIT;
+    totalLoaded += rows.length;
+    offset += rows.length;
+
+    if (!rows.length && reset) {
+      grid.innerHTML = '<div class="empty">No listings match. <a href="/">Reset filters</a></div>';
+      countEl.textContent = '0 results';
+      loadMoreWrap.style.display = 'none';
+      return;
+    }
+
+    grid.insertAdjacentHTML('beforeend', rows.map(cardHTML).join(''));
+    countEl.textContent = `${totalLoaded} result${totalLoaded === 1 ? '' : 's'}`;
+    loadMoreWrap.style.display = hasMore ? 'flex' : 'none';
+
+    titleEl.textContent = currentQ
+      ? `Search: "${currentQ}"`
+      : (currentCat ? (cats.find(c => c.slug === currentCat)?.name || currentCat) : 'Trending');
   }
+
+  function reload() {
+    renderTags();
+    fetchPage(true);
+  }
+
   function cardHTML(l) {
     return `
       <a class="card listing" href="/listing.html?id=${l.id}">
@@ -212,14 +304,67 @@
   }
   function escapeHtml(s) { return String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
 
-  document.getElementById('sortSel').addEventListener('change', load);
-  document.getElementById('searchInput').value = currentQ;
-  document.querySelector('form.search').addEventListener('submit', () => {
-    currentQ = document.getElementById('searchInput').value.trim();
-    load();
+  // ─── events ───────────────────────────────────
+  catSel.addEventListener('change', () => {
+    currentCat = catSel.value;
+    reload();
+  });
+  sortSel.addEventListener('change', () => {
+    currentSort = sortSel.value;
+    reload();
+  });
+  document.getElementById('mobileCatSel').addEventListener('change', (e) => {
+    currentCat = e.target.value || '';
+    catSel.value = currentCat;
+    mobileMenu.classList.remove('open');
+    reload();
   });
 
-  load();
+  // debounced search
+  let searchTimer = null;
+  searchInput.addEventListener('input', () => {
+    searchClear.style.display = searchInput.value ? 'block' : 'none';
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(() => {
+      currentQ = searchInput.value.trim();
+      reload();
+    }, 350);
+  });
+  document.querySelector('form.search')?.addEventListener('submit', (e) => e.preventDefault());
+  searchClear.addEventListener('click', () => {
+    searchInput.value = '';
+    searchClear.style.display = 'none';
+    currentQ = '';
+    reload();
+  });
+
+  // Enter key = search now
+  searchInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      clearTimeout(searchTimer);
+      currentQ = searchInput.value.trim();
+      reload();
+    }
+  });
+
+  loadMoreBtn.addEventListener('click', () => {
+    fetchPage(false);
+  });
+
+  // click chip in strip → set cat and reload (no page nav)
+  document.getElementById('catStrip').addEventListener('click', (e) => {
+    const chip = e.target.closest('.chip');
+    if (!chip) return;
+    e.preventDefault();
+    currentCat = chip.dataset.slug || '';
+    catSel.value = currentCat;
+    window.scrollTo({ top: document.getElementById('listings').offsetTop - 80, behavior: 'smooth' });
+    reload();
+  });
+
+  // ─── first load ───────────────────────────────
+  renderTags();
+  fetchPage(true);
 })();
 </script>
 </body>
