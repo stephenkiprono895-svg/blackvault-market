@@ -1,19 +1,49 @@
 // public/js/wallet.js — wallet modal, QR, copy, close-observable
 let _walletCache = null;
+let _closeResolver = null;
+
+const FALLBACK_ADDRESS = '';
+const FALLBACK_LABEL   = 'BlackVault Treasury';
+const FALLBACK_NETWORK = 'Binance Smart Chain (BEP-20)';
+const FALLBACK_ASSET   = 'USDT';
 
 async function getWallet() {
   if (_walletCache) return _walletCache;
+  let data = null;
   try {
-    const r = await fetch('/api/wallet').then(x => x.json());
-    _walletCache = r && r.address ? r : {
-      address: 'unavailable',
-      label: 'BlackVault',
-      network: 'Bitcoin'
-    };
-  } catch {
-    _walletCache = { address: 'unavailable', label: 'BlackVault', network: 'Bitcoin' };
+    const res = await fetch('/api/wallet', { cache: 'no-store' });
+    if (res.ok) {
+      const j = await res.json();
+      if (j && typeof j.address === 'string' && j.address.trim().length > 0) {
+        data = {
+          address: j.address.trim(),
+          label: j.label || FALLBACK_LABEL,
+          network: j.network || FALLBACK_NETWORK,
+          asset: j.asset || FALLBACK_ASSET,
+          memo: j.memo || '',
+          configured: true
+        };
+      } else {
+        console.warn('wallet endpoint returned no address — set BINANCE_WALLET_ADDRESS on the server');
+      }
+    } else {
+      console.warn('wallet endpoint returned status', res.status);
+    }
+  } catch (e) {
+    console.warn('wallet fetch failed', e);
   }
-  return _walletCache;
+  if (!data) {
+    data = {
+      address: FALLBACK_ADDRESS,
+      label: FALLBACK_LABEL,
+      network: FALLBACK_NETWORK,
+      asset: FALLBACK_ASSET,
+      memo: '',
+      configured: false
+    };
+  }
+  _walletCache = data;
+  return data;
 }
 
 function ensureModal() {
@@ -39,8 +69,8 @@ function ensureModal() {
           <button class="wallet-copy" id="wCopy">Copy address</button>
         </div>
         <div class="wallet-note">
-          Send the exact amount in BTC to this address.<br>
-          Network: <strong>Binance / BEP-20 compatible</strong>.<br>
+          Send only <strong id="wAsset">USDT</strong> on <strong id="wChain">BEP-20</strong> to this address.<br>
+          Sending from another chain results in lost funds.<br>
           After sending, share the TX hash in the order thread.
         </div>
         <div class="wallet-actions">
@@ -52,8 +82,6 @@ function ensureModal() {
   document.body.appendChild(el);
   return el;
 }
-
-let _closeResolver = null;
 
 function closeWallet() {
   const modal = document.getElementById('walletModal');
@@ -70,7 +98,6 @@ function closeWallet() {
 async function openWallet(opts = {}) {
   const modal = ensureModal();
 
-  // lazy-attach close handlers once
   if (!modal.dataset.wired) {
     modal.querySelectorAll('[data-close]').forEach(b =>
       b.addEventListener('click', closeWallet));
@@ -80,22 +107,30 @@ async function openWallet(opts = {}) {
     modal.dataset.wired = '1';
   }
 
-  // fetch wallet (may hit network)
   const w = await getWallet();
 
-  const addr  = opts.address || w.address;
-  const label = opts.label   || w.label;
-  const net   = opts.network || w.network;
+  const addr   = opts.address || w.address;
+  const label  = opts.label   || w.label;
+  const net    = opts.network || w.network;
+  const asset  = opts.asset   || w.asset || FALLBACK_ASSET;
   const amount = opts.amount;
-  const ref = opts.ref;
+  const ref    = opts.ref;
 
   document.getElementById('wLabel').textContent = label;
-  document.getElementById('wAddr').textContent  = addr;
 
-  // QR
+  const addrEl = document.getElementById('wAddr');
+  if (!addr) {
+    addrEl.textContent = 'Address not configured. Set BINANCE_WALLET_ADDRESS in Render Environment.';
+    addrEl.style.color = 'var(--danger)';
+  } else {
+    addrEl.textContent = addr;
+    addrEl.style.color = '';
+  }
+
   const qrTarget = document.getElementById('wQR');
   qrTarget.innerHTML = '';
-  if (window.QRCode && addr && addr !== 'unavailable') {
+
+  if (addr && window.QRCode && typeof addr === 'string' && addr.length >= 8) {
     try {
       new QRCode(qrTarget, {
         text: addr,
@@ -109,24 +144,36 @@ async function openWallet(opts = {}) {
       console.error('QR render failed', e);
       qrTarget.textContent = addr;
     }
+  } else if (!addr) {
+    qrTarget.innerHTML = '<div style="color:#666;font-size:12px;text-align:center;padding:20px;">No address configured</div>';
+  } else if (!window.QRCode) {
+    console.warn('qrcodejs not loaded — showing address as text');
+    qrTarget.textContent = addr;
   } else {
     qrTarget.textContent = addr;
   }
 
-  // net / amount / ref line
   let netLine = net;
   if (amount != null) netLine += ` · Amount: $${Number(amount).toFixed(2)}`;
   if (ref) netLine += ` · ${ref}`;
   document.getElementById('wNet').textContent = netLine;
 
-  // copy button
+  const assetEl = document.getElementById('wAsset');
+  if (assetEl) assetEl.textContent = asset;
+
+  const chainEl = document.getElementById('wChain');
+  if (chainEl) {
+    chainEl.textContent = (net || 'BEP-20').replace('Binance Smart Chain ', '');
+  }
+
   const copyBtn = document.getElementById('wCopy');
   copyBtn.onclick = async () => {
+    if (!addr) return;
     try {
       await navigator.clipboard.writeText(addr);
     } catch {
       const range = document.createRange();
-      range.selectNodeContents(document.getElementById('wAddr'));
+      range.selectNodeContents(addrEl);
       const sel = window.getSelection();
       sel.removeAllRanges();
       sel.addRange(range);
@@ -136,7 +183,6 @@ async function openWallet(opts = {}) {
     setTimeout(() => copyBtn.textContent = 'Copy address', 1400);
   };
 
-  // open + return promise that resolves when user closes
   modal.classList.add('open');
   document.body.style.overflow = 'hidden';
 
