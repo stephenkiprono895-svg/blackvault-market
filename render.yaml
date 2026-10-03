@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: blackvault
+    name: blackvault-market
     runtime: node
     plan: free
     region: oregon
@@ -18,17 +18,9 @@ services:
         generateValue: true
       - key: PLATFORM_FEE
         value: "0.05"
+      - key: BINANCE_WALLET_ADDRESS
+        sync: false
+      - key: BINANCE_WALLET_LABEL
+        value: BlackVault Treasury
       - key: DATA_DIR
         value: /opt/render/project/src/data
-      - key: BINANCE_ADDRESS
-        sync: false
-      - key: BINANCE_NETWORK
-        value: "BSC (BEP20)"
-      - key: BINANCE_ASSET
-        value: "USDT"
-      - key: BINANCE_MEMO
-        sync: false
-      - key: SUPPORT_XMR
-        sync: false
-      - key: SUPPORT_EMAIL
-        value: "support@blackvault.example"
