@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="apple-touch-icon" href="/favicon.svg">
+<meta name="theme-color" content="#07070a">
+<title>Sell — BlackVault</title>
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body class="dw">
+<div class="dw-scanline"></div>
+
+<header class="topbar">
+  <div class="wrap">
+    <a class="brand" href="/"><span class="logo">◈</span> BlackVault</a>
+    <nav class="mainnav">
+      <a href="/">Market</a>
+      <a href="/orders.html">Orders</a>
+    </nav>
+    <div class="userbox" id="userbox"></div>
+    <button class="wallet-chip" id="walletBtn"><span class="wallet-chip-dot"></span> Wallet</button>
+  </div>
+</header>
+
+<main class="wrap narrow">
+  <h1>Create a listing</h1>
+  <p class="muted">Vendor accounts only. Contact support to upgrade.</p>
+  <form id="sellForm" class="card">
+    <label>Category <select name="category_slug" id="catSelect" required></select></label>
+    <label>Title <input name="title" required></label>
+    <label>Subtitle <input name="subtitle"></label>
+    <label>Description <textarea name="description" rows="6" required></textarea></label>
+    <div class="grid2">
+      <label>Price (USD) <input name="price_usd" type="number" min="1" step="0.01" required></label>
+      <label>Unit <input name="unit" placeholder="unit, pack, account, month"></label>
+    </div>
+    <div class="grid2">
+      <label>Stock <input name="stock" type="number" min="1" value="10"></label>
+      <label>Region <input name="region" placeholder="US, EU, WW"></label>
+    </div>
+    <button class="btn btn-primary btn-block">Publish</button>
+    <div id="err" class="err"></div>
+  </form>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+<script src="/js/wallet.js"></script>
+<script>
+(async () => {
+  const me = await fetch('/api/me').then(r => r.ok ? r.json() : null).catch(() => null);
+  if (!me?.user) { location.href = '/login.html?next=/sell.html'; return; }
+  document.getElementById('userbox').innerHTML = `<span class="handle">${me.user.handle}</span>`;
+  document.getElementById('walletBtn').addEventListener('click', () => openWallet());
+
+  const cats = await fetch('/api/categories').then(r => r.json()).then(r => r.categories);
+  document.getElementById('catSelect').innerHTML = cats.map(c => `<option value="${c.slug}">${c.name}</option>`).join('');
+
+  document.getElementById('sellForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const d = Object.fromEntries(new FormData(e.target));
+    const r = await fetch('/api/vendor/listings', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify(d)
+    }).then(x => x.json());
+    if (r.error) { document.getElementById('err').textContent = r.error; return; }
+    location.href = '/listing.html?id=' + r.id;
+  });
+})();
+</script>
+</body>
+</html>

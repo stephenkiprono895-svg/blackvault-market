@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="apple-touch-icon" href="/favicon.svg">
+<meta name="theme-color" content="#07070a">
+<title>Sign in — BlackVault</title>
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body class="auth-body dw">
+<main class="auth-card">
+  <a class="brand" href="/"><span class="logo">◈</span> BlackVault</a>
+  <h1>Sign in</h1>
+  <form id="loginForm">
+    <label>Handle <input name="handle" required autocomplete="username"></label>
+    <label>Password <input name="password" type="password" required autocomplete="current-password"></label>
+    <button class="btn btn-primary btn-block">Sign in</button>
+    <p class="muted">No account? <a href="/register.html">Register</a></p>
+    <div id="err" class="err"></div>
+  </form>
+</main>
+<script>
+document.getElementById('loginForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const d = Object.fromEntries(new FormData(e.target));
+  const r = await fetch('/api/login', {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify(d)
+  }).then(x => x.json());
+  if (r.error) { document.getElementById('err').textContent = r.error; return; }
+  const next = new URLSearchParams(location.search).get('next') || '/';
+  location.href = next;
+});
+</script>
+</body>
+</html>

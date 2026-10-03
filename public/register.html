@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="apple-touch-icon" href="/favicon.svg">
+<meta name="theme-color" content="#07070a">
+<title>Register — BlackVault</title>
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body class="auth-body dw">
+<main class="auth-card">
+  <a class="brand" href="/"><span class="logo">◈</span> BlackVault</a>
+  <h1>Register</h1>
+  <form id="regForm">
+    <label>Handle <input name="handle" required pattern="[A-Za-z0-9_]{3,32}"></label>
+    <label>Password <input name="password" type="password" required minlength="8"></label>
+    <label>PGP public key (optional) <textarea name="pgp_key" rows="3"></textarea></label>
+    <label>XMR address (optional) <input name="xmr_address"></label>
+    <button class="btn btn-primary btn-block">Create account</button>
+    <p class="muted">Have an account? <a href="/login.html">Sign in</a></p>
+    <div id="err" class="err"></div>
+  </form>
+</main>
+<script>
+document.getElementById('regForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const d = Object.fromEntries(new FormData(e.target));
+  const r = await fetch('/api/register', {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify(d)
+  }).then(x => x.json());
+  if (r.error) { document.getElementById('err').textContent = r.error; return; }
+  location.href = '/';
+});
+</script>
+</body>
+</html>
