@@ -4,22 +4,29 @@ const db = require('./db');
 const bcrypt = require('bcryptjs');
 
 const CATS = [
-  { slug: 'cards',     name: 'Carding & CCs',           icon: '💳', sort: 1 },
-  { slug: 'fullz',     name: 'Fullz & Bank Drops',      icon: '📇', sort: 2 },
-  { slug: 'tax',       name: 'Tax Refund & FAFSA',      icon: '🧾', sort: 3 },
-  { slug: 'loans',     name: 'SBA & UI Loans',          icon: '🏦', sort: 4 },
-  { slug: 'spam',      name: 'Spamming Infrastructure', icon: '📨', sort: 5 },
-  { slug: 'rt',        name: 'Remote Tasks & Call Ops', icon: '🎧', sort: 6 },
-  { slug: 'cashout',   name: 'Cashout & Drops',         icon: '💰', sort: 7 },
-  { slug: 'tools',     name: 'Tools & Tutorials',       icon: '🛠️', sort: 8 },
-  { slug: 'logs',      name: 'Logs & Access',           icon: '🔐', sort: 9 },
-  { slug: 'id',        name: 'IDs & Docs',              icon: '🪪', sort: 10 },
-  { slug: 'crypto',    name: 'Crypto & Wallets',        icon: '₿',  sort: 11 },
-  { slug: 'malware',   name: 'Malware & Loaders',       icon: '☣️', sort: 12 },
-  { slug: 'guides',    name: 'Guides & Courses',        icon: '📚', sort: 13 },
-  { slug: 'telecom',   name: 'eSIM, DID & VoIP',        icon: '📞', sort: 14 },
-  { slug: 'bypass',    name: 'CAPTCHA & 2FA Bypass',    icon: '🤖', sort: 15 },
-  { slug: 'cve',       name: 'CVEs & Exploits',         icon: '🐛', sort: 16 }
+  { slug: 'cards',       name: 'Carding & CCs',            icon: '💳', sort: 1 },
+  { slug: 'fullz',       name: 'Fullz & Bank Drops',       icon: '📇', sort: 2 },
+  { slug: 'tax',         name: 'Tax Refund & FAFSA',       icon: '🧾', sort: 3 },
+  { slug: 'loans',       name: 'SBA & UI Loans',           icon: '🏦', sort: 4 },
+  { slug: 'spam',        name: 'Spamming Infrastructure',  icon: '📨', sort: 5 },
+  { slug: 'rt',          name: 'Remote Tasks & Call Ops',  icon: '🎧', sort: 6 },
+  { slug: 'cashout',     name: 'Cashout & Drops',          icon: '💰', sort: 7 },
+  { slug: 'tools',       name: 'Tools & Tutorials',        icon: '🛠️', sort: 8 },
+  { slug: 'logs',        name: 'Logs & Access',            icon: '🔐', sort: 9 },
+  { slug: 'id',          name: 'IDs & Docs',               icon: '🪪', sort: 10 },
+  { slug: 'crypto',      name: 'Crypto & Wallets',         icon: '₿',  sort: 11 },
+  { slug: 'malware',     name: 'Malware & Loaders',        icon: '☣️', sort: 12 },
+  { slug: 'guides',      name: 'Guides & Courses',         icon: '📚', sort: 13 },
+  { slug: 'telecom',     name: 'eSIM, DID & VoIP',         icon: '📞', sort: 14 },
+  { slug: 'bypass',      name: 'CAPTCHA & 2FA Bypass',     icon: '🤖', sort: 15 },
+  { slug: 'cve',         name: 'CVEs & Exploits',          icon: '🐛', sort: 16 },
+  { slug: 'enroll',      name: 'Enrollment & IDME',        icon: '🎓', sort: 17 },
+  { slug: 'transcripts', name: 'Transcripts & Diplomas',   icon: '📜', sort: 18 },
+  { slug: 'flasher',     name: 'Flashers & Fake Funds',    icon: '💵', sort: 19 },
+  { slug: 'jailbreak',   name: 'Jailbreaks & Unlocks',     icon: '🔓', sort: 20 },
+  { slug: 'drugs',       name: 'Drugs & Pharmaceuticals',  icon: '💊', sort: 21 },
+  { slug: 'hire',        name: 'Hackers For Hire',         icon: '👤', sort: 22 },
+  { slug: 'docs',        name: 'Documents & Certificates', icon: '📄', sort: 23 }
 ];
 
 const upsertCat = db.prepare(
@@ -38,14 +45,20 @@ function ensureUser(handle, password, vendor = 0) {
   return db.prepare(`SELECT * FROM users WHERE id = ?`).get(info.lastInsertRowid);
 }
 
-const v1 = ensureUser('darkbazaar',   'hunter2!!!', 1);
-const v2 = ensureUser('shadowbroker', 'hunter2!!!', 1);
-const v3 = ensureUser('taxkingpin',   'hunter2!!!', 1);
-const v4 = ensureUser('spamfactory',  'hunter2!!!', 1);
-const v5 = ensureUser('cryptovault',  'hunter2!!!', 1);
-const v6 = ensureUser('zero_day',     'hunter2!!!', 1);
-const v7 = ensureUser('telecom_ghost','hunter2!!!', 1);
-const v8 = ensureUser('bypass_lab',   'hunter2!!!', 1);
+const v1  = ensureUser('darkbazaar',   'hunter2!!!', 1);
+const v2  = ensureUser('shadowbroker', 'hunter2!!!', 1);
+const v3  = ensureUser('taxkingpin',   'hunter2!!!', 1);
+const v4  = ensureUser('spamfactory',  'hunter2!!!', 1);
+const v5  = ensureUser('cryptovault',  'hunter2!!!', 1);
+const v6  = ensureUser('zero_day',     'hunter2!!!', 1);
+const v7  = ensureUser('telecom_ghost','hunter2!!!', 1);
+const v8  = ensureUser('bypass_lab',   'hunter2!!!', 1);
+const v9  = ensureUser('enroll_pro',   'hunter2!!!', 1);
+const v10 = ensureUser('paper_mill',   'hunter2!!!', 1);
+const v11 = ensureUser('cash_printer', 'hunter2!!!', 1);
+const v12 = ensureUser('unlock_shop',  'hunter2!!!', 1);
+const v13 = ensureUser('pharma_dark',  'hunter2!!!', 1);
+const v14 = ensureUser('hire_gun',     'hunter2!!!', 1);
 
 const LISTINGS = [
   // ─── CARDS ───────────────────────────────────────────
@@ -465,7 +478,195 @@ const LISTINGS = [
     price_usd: 480, unit: 'module', stock: 34, region: 'WW', sales: 67, rating_avg: 4.7, rating_count: 28 },
   { v: v6, cat: 'cve', title: 'CVE Starter — Single Report', subtitle: 'Entry tier',
     description: 'Single CVE analysis report. Preview the quality of the CVE analysis service. Any CVE, standard report format.',
-    price_usd: 15, unit: 'report', stock: 999, region: 'WW', sales: 344, rating_avg: 4.4, rating_count: 128 }
+    price_usd: 15, unit: 'report', stock: 999, region: 'WW', sales: 344, rating_avg: 4.4, rating_count: 128 },
+
+  // ─── ENROLLMENT & IDME ───────────────────────────────
+  { v: v9, cat: 'enroll', title: 'ID.me Full Verification Kit', subtitle: 'Full identity + selfie bypass',
+    description: 'Complete ID.me verification kit. Full identity docs, address proof, phone number, and video selfie package. Bypasses ID.me KYC for IRS, SSA, VA, and state portals.',
+    price_usd: 320, unit: 'package', stock: 44, region: 'US', sales: 122, rating_avg: 4.7, rating_count: 51 },
+  { v: v9, cat: 'enroll', title: 'ID.me Account — Pre-verified', subtitle: 'Ready to use',
+    description: 'Pre-verified ID.me account. All documents matched. Phone and email active. Used for IRS, state benefits, and VA portal access.',
+    price_usd: 240, unit: 'account', stock: 62, region: 'US', sales: 189, rating_avg: 4.6, rating_count: 78 },
+  { v: v9, cat: 'enroll', title: 'Enrollment Package — University', subtitle: 'Full student setup',
+    description: 'Full university enrollment package. Student identity, SSN, address, phone, high school transcript, and FAFSA pre-fill. Works with most US universities.',
+    price_usd: 680, unit: 'package', stock: 18, region: 'US', sales: 76, rating_avg: 4.7, rating_count: 31 },
+  { v: v9, cat: 'enroll', title: 'College Application Kit — Premium', subtitle: 'Common App ready',
+    description: 'College application kit. Common App-compatible identity. Includes essays, transcripts, recommendations, and enrollment deposit routing.',
+    price_usd: 780, unit: 'kit', stock: 12, region: 'US', sales: 41, rating_avg: 4.8, rating_count: 18 },
+  { v: v9, cat: 'enroll', title: 'ID.me Verif — Single Doc', subtitle: 'Entry tier',
+    description: 'Single ID.me verification doc. Government ID only. Preview tier for testing the process.',
+    price_usd: 25, unit: 'doc', stock: 999, region: 'US', sales: 344, rating_avg: 4.4, rating_count: 128 },
+  { v: v9, cat: 'enroll', title: 'Student Email + .edu Access', subtitle: 'Active inbox',
+    description: 'Active .edu student email. University inbox with full access. Includes student portal login. Unlocks student discounts and services.',
+    price_usd: 40, unit: 'account', stock: 142, region: 'US', sales: 456, rating_avg: 4.6, rating_count: 178 },
+
+  // ─── TRANSCRIPTS & DIPLOMAS ──────────────────────────
+  { v: v10, cat: 'transcripts', title: 'High School Transcript — Verified', subtitle: 'Any US state',
+    description: 'Verified high school transcript. Any US state. Includes GPA, graduation date, and official seal. Print and scan-ready.',
+    price_usd: 120, unit: 'transcript', stock: 244, region: 'US', sales: 344, rating_avg: 4.6, rating_count: 142 },
+  { v: v10, cat: 'transcripts', title: 'College Transcript — Bulk 5', subtitle: 'Multi-university',
+    description: 'Bulk college transcripts. 5 transcripts across different universities. Includes GPA, credits, and degree conferral.',
+    price_usd: 480, unit: '5 pack', stock: 44, region: 'US', sales: 88, rating_avg: 4.7, rating_count: 34 },
+  { v: v10, cat: 'transcripts', title: 'GED Certificate + Transcript', subtitle: 'State-issued look',
+    description: 'GED certificate with matching transcript. State-issued look. Includes test scores and completion date.',
+    price_usd: 180, unit: 'set', stock: 122, region: 'US', sales: 178, rating_avg: 4.5, rating_count: 71 },
+  { v: v10, cat: 'transcripts', title: 'Diploma Package — Full Set', subtitle: 'HS + college',
+    description: 'Full diploma package. High school diploma and college degree. Matching transcripts for both. Print-ready.',
+    price_usd: 620, unit: 'package', stock: 34, region: 'US', sales: 122, rating_avg: 4.7, rating_count: 51 },
+  { v: v10, cat: 'transcripts', title: 'Transcript Template — Editable', subtitle: 'PSD, any school',
+    description: 'Editable transcript template. Photoshop PSD format. Layers for school name, GPA, courses, and dates. Any US school.',
+    price_usd: 40, unit: 'template', stock: 999, region: 'US', sales: 388, rating_avg: 4.6, rating_count: 156 },
+  { v: v10, cat: 'transcripts', title: 'Transcript Sample — Single', subtitle: 'Preview tier',
+    description: 'Single sample transcript. Preview quality and format. Low-cost trial before bulk purchase.',
+    price_usd: 15, unit: 'sample', stock: 999, region: 'US', sales: 512, rating_avg: 4.4, rating_count: 189 },
+
+  // ─── FLASHERS & FAKE FUNDS ───────────────────────────
+  { v: v11, cat: 'flasher', title: 'USDT Flash — 10k Flash', subtitle: 'Bitflasher, 24h window',
+    description: 'USDT flasher via Bitflasher protocol. 10,000 USDT flashed for 24-hour window. Visible on-chain, confirmable in wallet, expires after window.',
+    price_usd: 180, unit: 'flash', stock: 999, region: 'WW', sales: 244, rating_avg: 4.5, rating_count: 98 },
+  { v: v11, cat: 'flasher', title: 'USDT Flash — 100k Flash', subtitle: 'Bitflasher, 48h window',
+    description: 'USDT flasher. 100,000 USDT for 48-hour window. Extendable. Works on TRC-20, ERC-20, and BEP-20 chains.',
+    price_usd: 620, unit: 'flash', stock: 44, region: 'WW', sales: 122, rating_avg: 4.6, rating_count: 51 },
+  { v: v11, cat: 'flasher', title: 'USDT Flash — Bulk 1M', subtitle: 'Bitflasher, wholesale',
+    description: 'Bulk USDT flash. 1,000,000 USDT for 72-hour window. Multi-chain support. Includes wallet routing scripts.',
+    price_usd: 800, unit: 'flash', stock: 8, region: 'WW', sales: 34, rating_avg: 4.7, rating_count: 14 },
+  { v: v11, cat: 'flasher', title: 'BTC Flash — 5 BTC', subtitle: 'Bitflasher, 24h window',
+    description: 'BTC flasher. 5 BTC for 24-hour window. Visible on-chain, confirmable, expires. Includes wallet scripts.',
+    price_usd: 480, unit: 'flash', stock: 22, region: 'WW', sales: 67, rating_avg: 4.5, rating_count: 28 },
+  { v: v11, cat: 'flasher', title: 'Fake Bank Transfer Screenshot', subtitle: 'Any bank, any amount',
+    description: 'Fake bank transfer screenshots. Any US or UK bank. Any amount. Realistic formatting including transaction IDs and confirmation numbers.',
+    price_usd: 20, unit: 'screenshot', stock: 999, region: 'WW', sales: 892, rating_avg: 4.5, rating_count: 342 },
+  { v: v11, cat: 'flasher', title: 'Fake Balance Screenshot — Bulk 10', subtitle: 'Any wallet or bank',
+    description: 'Bulk fake balance screenshots. 10 images per pack. Any crypto wallet or bank. Realistic UI matching current app versions.',
+    price_usd: 90, unit: '10 pack', stock: 244, region: 'WW', sales: 267, rating_avg: 4.4, rating_count: 108 },
+  { v: v11, cat: 'flasher', title: 'Fake Payment Gateway — Full Setup', subtitle: 'Self-hosted',
+    description: 'Self-hosted fake payment gateway. Shows checkout pages that accept crypto, then displays "payment received". Full admin panel.',
+    price_usd: 780, unit: 'setup', stock: 8, region: 'WW', sales: 41, rating_avg: 4.6, rating_count: 18 },
+  { v: v11, cat: 'flasher', title: 'Flash Sample — Trial', subtitle: 'Entry tier',
+    description: 'Single small flash. 100 USDT for 6-hour window. Test the flasher before bulk purchase.',
+    price_usd: 15, unit: 'flash', stock: 999, region: 'WW', sales: 512, rating_avg: 4.3, rating_count: 189 },
+
+  // ─── JAILBREAKS & UNLOCKS ────────────────────────────
+  { v: v12, cat: 'jailbreak', title: 'iOS Jailbreak — Full Tool', subtitle: 'iPhone 8 to 15',
+    description: 'Full iOS jailbreak tool. Supports iPhone 8 through iPhone 15. Works on iOS 14 to 17.6. Includes Cydia, Sileo, and rootless package manager.',
+    price_usd: 120, unit: 'tool', stock: 999, region: 'WW', sales: 344, rating_avg: 4.6, rating_count: 128 },
+  { v: v12, cat: 'jailbreak', title: 'Android Root — Universal Tool', subtitle: 'All major brands',
+    description: 'Universal Android root tool. Supports Samsung, Xiaomi, OnePlus, Pixel, and Motorola. One-click root via USB. Includes Magisk and SuperSU.',
+    price_usd: 80, unit: 'tool', stock: 999, region: 'WW', sales: 422, rating_avg: 4.7, rating_count: 178 },
+  { v: v12, cat: 'jailbreak', title: 'iCloud Bypass — Activation Lock', subtitle: 'All iPhone models',
+    description: 'iCloud activation lock bypass. All iPhone models. Removes Find My iPhone lock. Persistent across reboots and iOS updates.',
+    price_usd: 220, unit: 'license', stock: 142, region: 'WW', sales: 189, rating_avg: 4.6, rating_count: 78 },
+  { v: v12, cat: 'jailbreak', title: 'Carrier Unlock — iPhone', subtitle: 'Any carrier',
+    description: 'iPhone carrier unlock. Any carrier, any model. Permanent unlock via IMEI. Works on iPhone 6 through 15.',
+    price_usd: 60, unit: 'unlock', stock: 999, region: 'WW', sales: 622, rating_avg: 4.7, rating_count: 244 },
+  { v: v12, cat: 'jailbreak', title: 'Carrier Unlock — Android', subtitle: 'Any carrier, bulk',
+    description: 'Android carrier unlock. Any carrier, any model. IMEI-based. Bulk pricing available for 10+ devices.',
+    price_usd: 40, unit: 'unlock', stock: 999, region: 'WW', sales: 512, rating_avg: 4.5, rating_count: 217 },
+  { v: v12, cat: 'jailbreak', title: 'FRP Bypass — Samsung / Google', subtitle: 'Android factory reset',
+    description: 'FRP (Factory Reset Protection) bypass. Samsung and Google devices. Removes Google account lock after factory reset.',
+    price_usd: 90, unit: 'license', stock: 244, region: 'WW', sales: 267, rating_avg: 4.6, rating_count: 108 },
+  { v: v12, cat: 'jailbreak', title: 'Console Jailbreak — PS5', subtitle: 'All firmwares',
+    description: 'PS5 jailbreak. All firmwares up to 4.51. Homebrew support, custom packages, backup loading. Includes exploit chain and instructions.',
+    price_usd: 480, unit: 'tool', stock: 44, region: 'WW', sales: 122, rating_avg: 4.7, rating_count: 51 },
+  { v: v12, cat: 'jailbreak', title: 'Nintendo Switch CFW Install', subtitle: 'Full jailbreak',
+    description: 'Nintendo Switch custom firmware install. Atmosphère CFW, homebrew menu, backup loading. Full guide and files. Works on V1 and V2.',
+    price_usd: 220, unit: 'license', stock: 244, region: 'WW', sales: 189, rating_avg: 4.6, rating_count: 78 },
+  { v: v12, cat: 'jailbreak', title: 'Jailbreak Sample — Preview', subtitle: 'Entry tier',
+    description: 'Single device preview jailbreak. Older model only. Preview the service before committing to newer devices.',
+    price_usd: 15, unit: 'license', stock: 999, region: 'WW', sales: 344, rating_avg: 4.3, rating_count: 128 },
+
+  // ─── DRUGS & PHARMACEUTICALS ─────────────────────────
+  { v: v13, cat: 'drugs', title: 'Pharmaceutical — Starter Pack', subtitle: 'Common meds',
+    description: 'Starter pharmaceutical pack. Assorted common prescription meds. Shipped discreetly. Domestic US shipping 2-4 days.',
+    price_usd: 60, unit: 'pack', stock: 999, region: 'US', sales: 456, rating_avg: 4.5, rating_count: 178 },
+  { v: v13, cat: 'drugs', title: 'Prescription Painkillers — Bulk 100', subtitle: 'Oxy, Hydro, Codeine',
+    description: 'Bulk prescription painkillers. 100 units per pack. Oxycodone, Hydrocodone, Codeine mixes available. Domestic and international shipping.',
+    price_usd: 520, unit: '100 pack', stock: 62, region: 'US', sales: 211, rating_avg: 4.6, rating_count: 84 },
+  { v: v13, cat: 'drugs', title: 'Benzodiazepines — Bulk 200', subtitle: 'Xanax, Valium, Klonopin',
+    description: 'Bulk benzodiazepines. 200 units per pack. Xanax, Valium, Klonopin, Ativan mixes. Pharmaceutical-grade.',
+    price_usd: 420, unit: '200 pack', stock: 88, region: 'US', sales: 267, rating_avg: 4.6, rating_count: 108 },
+  { v: v13, cat: 'drugs', title: 'Stimulants — Pharmaceutical', subtitle: 'Adderall, Ritalin',
+    description: 'Pharmaceutical stimulants. Adderall, Ritalin, Vyvanse. Various dosages available. Prescription-grade.',
+    price_usd: 340, unit: '100 pack', stock: 122, region: 'US', sales: 178, rating_avg: 4.5, rating_count: 71 },
+  { v: v13, cat: 'drugs', title: 'Psychedelics — LSD Blotters', subtitle: 'Vials and sheets',
+    description: 'LSD blotters. Various strengths available. 100-blotter sheets or single vials. Discreet shipping.',
+    price_usd: 380, unit: 'sheet', stock: 44, region: 'US', sales: 133, rating_avg: 4.7, rating_count: 51 },
+  { v: v13, cat: 'drugs', title: 'MDMA / Ecstasy — Bulk', subtitle: 'Crystal or pills',
+    description: 'MDMA crystal or ecstasy pills. Bulk pricing. Tested purity. Domestic and international shipping. Minimum 10g crystal or 100 pills.',
+    price_usd: 480, unit: 'bulk', stock: 34, region: 'WW', sales: 122, rating_avg: 4.6, rating_count: 51 },
+  { v: v13, cat: 'drugs', title: 'Cannabis — Premium Flower', subtitle: 'Various strains',
+    description: 'Premium cannabis flower. Various strains. Indoor grown. Discreet shipping. Minimum 1oz. Lab-tested.',
+    price_usd: 220, unit: 'oz', stock: 122, region: 'US', sales: 344, rating_avg: 4.7, rating_count: 142 },
+  { v: v13, cat: 'drugs', title: 'Prescription Pad — Blank', subtitle: 'Any US state',
+    description: 'Blank prescription pads. Any US state. Realistic formatting. Match with prescriber info. Print-ready.',
+    price_usd: 120, unit: 'pad', stock: 244, region: 'US', sales: 267, rating_avg: 4.5, rating_count: 108 },
+  { v: v13, cat: 'drugs', title: 'Pharmacy Login — Verified', subtitle: 'Retail chain access',
+    description: 'Verified pharmacy logins. Major US retail chains. Pharmacist and technician accounts. Access to inventory, prescription processing, and customer records.',
+    price_usd: 620, unit: 'access', stock: 22, region: 'US', sales: 88, rating_avg: 4.7, rating_count: 34 },
+  { v: v13, cat: 'drugs', title: 'Drug Sample — Trial', subtitle: 'Entry tier',
+    description: 'Sample trial pack. Small quantity of a common pharmaceutical. Preview quality before bulk.',
+    price_usd: 15, unit: 'sample', stock: 999, region: 'US', sales: 512, rating_avg: 4.4, rating_count: 189 },
+
+  // ─── HACKERS FOR HIRE ────────────────────────────────
+  { v: v14, cat: 'hire', title: 'Hacker — Single Target Access', subtitle: 'Email or social',
+    description: 'Single target access service. Email or social media account compromise. Full credentials delivered. 24-72 hour turnaround.',
+    price_usd: 220, unit: 'per target', stock: 999, region: 'WW', sales: 189, rating_avg: 4.6, rating_count: 78 },
+  { v: v14, cat: 'hire', title: 'Hacker — Phone Compromise', subtitle: 'iOS or Android',
+    description: 'Phone compromise service. iOS or Android target. Full remote access, messages, calls, location, and camera. Persistent access.',
+    price_usd: 620, unit: 'per target', stock: 142, region: 'WW', sales: 122, rating_avg: 4.6, rating_count: 51 },
+  { v: v14, cat: 'hire', title: 'Hacker — Bank Account Access', subtitle: 'US or EU bank',
+    description: 'Bank account compromise. US or EU target. Full balance access, transfer capability, and transaction history. Includes 2FA bypass.',
+    price_usd: 780, unit: 'per target', stock: 88, region: 'WW', sales: 67, rating_avg: 4.7, rating_count: 28 },
+  { v: v14, cat: 'hire', title: 'Hacker — Website Takeover', subtitle: 'Any CMS',
+    description: 'Website takeover service. WordPress, Shopify, custom CMS. Full admin access, database dump, and backdoor persistence.',
+    price_usd: 480, unit: 'per site', stock: 122, region: 'WW', sales: 133, rating_avg: 4.7, rating_count: 51 },
+  { v: v14, cat: 'hire', title: 'Hacker — DDoS Attack', subtitle: 'Custom duration',
+    description: 'DDoS attack service. Any target, any duration. 500 Gbps peak capacity. Multi-vector. Includes TCP, UDP, and application-layer.',
+    price_usd: 180, unit: 'per hour', stock: 999, region: 'WW', sales: 344, rating_avg: 4.5, rating_count: 142 },
+  { v: v14, cat: 'hire', title: 'Hacker — Social Media Hijack', subtitle: 'All platforms',
+    description: 'Social media account hijack. Instagram, Facebook, TikTok, Twitter, Snapchat. Full account takeover with recovery info.',
+    price_usd: 260, unit: 'per account', stock: 244, region: 'WW', sales: 267, rating_avg: 4.6, rating_count: 108 },
+  { v: v14, cat: 'hire', title: 'Hacker — Corporate Espionage', subtitle: 'Retainer',
+    description: 'Corporate espionage service. Retainer-based. Email compromise, internal document extraction, competitor intelligence. Custom scoping.',
+    price_usd: 800, unit: 'per week', stock: 8, region: 'WW', sales: 22, rating_avg: 4.8, rating_count: 9 },
+  { v: v14, cat: 'hire', title: 'Hacker Team — Full Ops', subtitle: 'Dedicated crew',
+    description: 'Dedicated hacker team for sustained operations. 5+ operators. Custom target scope, long-term persistence, exit strategy. Monthly retainer.',
+    price_usd: 800, unit: 'per month', stock: 4, region: 'WW', sales: 14, rating_avg: 4.9, rating_count: 6 },
+  { v: v14, cat: 'hire', title: 'Hire Consultation — 30 min', subtitle: 'Entry tier',
+    description: '30-minute consultation with a hacker. Scope your target, get a quote, understand feasibility. Non-refundable.',
+    price_usd: 15, unit: 'session', stock: 999, region: 'WW', sales: 512, rating_avg: 4.4, rating_count: 189 },
+  { v: v14, cat: 'hire', title: 'Hacker — Bug Bounty Report', subtitle: 'Custom scan',
+    description: 'Custom bug bounty report for a target site. Includes vulnerability list, severity scoring, PoC screenshots, and remediation notes.',
+    price_usd: 320, unit: 'report', stock: 244, region: 'WW', sales: 122, rating_avg: 4.6, rating_count: 51 },
+
+  // ─── DOCUMENTS & CERTIFICATES ────────────────────────
+  { v: v10, cat: 'docs', title: 'Birth Certificate — Any US State', subtitle: 'Print-ready',
+    description: 'Birth certificate. Any US state. Includes state seal and registrar signature. Print and scan-ready.',
+    price_usd: 120, unit: 'doc', stock: 244, region: 'US', sales: 388, rating_avg: 4.6, rating_count: 156 },
+  { v: v10, cat: 'docs', title: 'Marriage Certificate — Custom', subtitle: 'Any state, any names',
+    description: 'Marriage certificate. Any state, any names, any date. Includes officiant signature and state seal.',
+    price_usd: 140, unit: 'doc', stock: 244, region: 'US', sales: 267, rating_avg: 4.5, rating_count: 108 },
+  { v: v10, cat: 'docs', title: 'Death Certificate — Print-ready', subtitle: 'Any state',
+    description: 'Death certificate. Any US state. Includes coroner signature and state seal. Used for estate and insurance purposes.',
+    price_usd: 160, unit: 'doc', stock: 122, region: 'US', sales: 178, rating_avg: 4.5, rating_count: 71 },
+  { v: v10, cat: 'docs', title: 'SSN Card — Physical', subtitle: 'Shipped discreetly',
+    description: 'Physical SSN card. Realistic paper stock. Shipped discreetly via standard mail. Domestic US shipping included.',
+    price_usd: 80, unit: 'card', stock: 388, region: 'US', sales: 456, rating_avg: 4.6, rating_count: 178 },
+  { v: v10, cat: 'docs', title: 'Professional Certificate — Any Field', subtitle: 'Any issuer',
+    description: 'Professional certificates. Any field, any issuer. IT, medical, trades, finance. Realistic formatting with seals and signatures.',
+    price_usd: 180, unit: 'cert', stock: 244, region: 'WW', sales: 267, rating_avg: 4.5, rating_count: 108 },
+  { v: v10, cat: 'docs', title: 'Notary Stamp + Signature', subtitle: 'Realistic replica',
+    description: 'Notary stamp and signature package. Realistic replica stamp. Includes notary name, commission number, and state.',
+    price_usd: 90, unit: 'set', stock: 388, region: 'US', sales: 344, rating_avg: 4.6, rating_count: 142 },
+  { v: v10, cat: 'docs', title: 'Apostille + Authentication', subtitle: 'Hague-compliant',
+    description: 'Apostille authentication for any document. Hague Convention compliant. Realistic formatting. For international use.',
+    price_usd: 220, unit: 'doc', stock: 122, region: 'WW', sales: 122, rating_avg: 4.6, rating_count: 51 },
+  { v: v10, cat: 'docs', title: 'Document Template — Any Type', subtitle: 'PSD, editable',
+    description: 'Editable document template. Photoshop PSD. Any type — birth, marriage, death, diploma, certificate. Layers for all fields.',
+    price_usd: 50, unit: 'template', stock: 999, region: 'US', sales: 512, rating_avg: 4.6, rating_count: 217 },
+  { v: v10, cat: 'docs', title: 'Doc Sample — Preview', subtitle: 'Entry tier',
+    description: 'Single sample document. Preview formatting and quality. Low-cost trial.',
+    price_usd: 15, unit: 'sample', stock: 999, region: 'US', sales: 622, rating_avg: 4.4, rating_count: 244 }
 ];
 
 const insert = db.prepare(`
