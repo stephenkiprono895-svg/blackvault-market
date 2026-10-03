@@ -121,20 +121,15 @@
     }).then(x => x.json());
     if (r.error) { alert(r.error); return; }
 
-    openWallet({
+    // opens modal, resolves when user closes it
+    await openWallet({
       amount: r.order.total,
       ref: r.order.ref,
       label: 'BlackVault — Order ' + r.order.ref
     });
 
-    const modal = document.getElementById('walletModal');
-    const observer = new MutationObserver(() => {
-      if (!modal.classList.contains('open')) {
-        observer.disconnect();
-        location.href = '/orders.html?ref=' + r.order.ref;
-      }
-    });
-    observer.observe(modal, { attributes: true, attributeFilter: ['class'] });
+    // popup closed → go to order thread
+    location.href = '/orders.html?ref=' + r.order.ref;
   });
 
   function escapeHtml(s) { return String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
