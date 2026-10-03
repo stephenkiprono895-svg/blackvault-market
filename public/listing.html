@@ -3,87 +3,96 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="referrer" content="no-referrer">
-<title>Listing // BlackVault</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="apple-touch-icon" href="/favicon.svg">
+<meta name="theme-color" content="#07070a">
+<title>Listing — BlackVault</title>
 <link rel="stylesheet" href="/css/style.css">
 </head>
-<body>
+<body class="dw">
+<div class="dw-scanline"></div>
+
 <header class="topbar">
   <div class="wrap">
-    <a class="brand" href="/"><span class="logo">☠</span> BLACKVAULT</a>
-    <nav><a href="/">MARKET</a><a href="/orders.html">ORDERS</a></nav>
+    <a class="brand" href="/"><span class="logo">◈</span> BlackVault</a>
+    <nav class="mainnav">
+      <a href="/">Market</a>
+      <a href="/orders.html">Orders</a>
+    </nav>
     <div class="userbox" id="userbox"></div>
+    <button class="wallet-chip" id="walletBtn"><span class="wallet-chip-dot"></span> Wallet</button>
   </div>
 </header>
 
 <main class="wrap narrow" id="root">
-  <div class="loading">loading…</div>
+  <div class="loading">Loading…</div>
 </main>
 
-<script src="/js/app.js"></script>
-<script src="/js/gate.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+<script src="/js/wallet.js"></script>
 <script>
 (async () => {
   const id = new URLSearchParams(location.search).get('id');
   const root = document.getElementById('root');
-  if (!id) { root.innerHTML = '<div class="empty">// missing listing id</div>'; return; }
+  if (!id) { root.innerHTML = '<div class="empty">Missing listing id.</div>'; return; }
+
+  document.getElementById('walletBtn').addEventListener('click', () => openWallet());
 
   const me = await fetch('/api/me').then(r => r.ok ? r.json() : null).catch(() => null);
   document.getElementById('userbox').innerHTML = me?.user
     ? `<span class="handle">${me.user.handle}</span><span class="bal">$${me.user.balance.toFixed(2)}</span>`
-    : `<a href="/login.html" class="btn btn-ghost">SIGN IN</a>`;
+    : `<a href="/login.html" class="btn btn-ghost">Sign in</a>`;
 
   const r = await fetch('/api/listings/' + id).then(x => x.json());
-  if (r.error) { root.innerHTML = '<div class="empty">// not found</div>'; return; }
+  if (r.error) { root.innerHTML = '<div class="empty">Not found.</div>'; return; }
   const l = r.listing, reviews = r.reviews || [];
-  const esc = window.BV.escapeHtml;
 
   root.innerHTML = `
-    <a class="back" href="/">← BACK TO MARKET</a>
+    <a class="back" href="/">← Back to market</a>
     <div class="listing-detail">
       <div class="detail-main">
         <div class="card-top">
-          <span class="cat-badge">${esc(l.cat_name)}</span>
-          <span class="region">${esc(l.region || 'WW')}</span>
+          <span class="cat-badge">${l.cat_name}</span>
+          <span class="region">${l.region || 'WW'}</span>
         </div>
-        <h1>${esc(l.title)}</h1>
-        ${l.subtitle ? `<p class="subtitle big">${esc(l.subtitle)}</p>` : ''}
+        <h1>${escapeHtml(l.title)}</h1>
+        ${l.subtitle ? `<p class="subtitle big">${escapeHtml(l.subtitle)}</p>` : ''}
         <div class="vendor-row">
-          <span>VENDOR <strong>@${esc(l.vendor_handle)}</strong></span>
-          <span>EST ${new Date(l.vendor_since + 'Z').toLocaleDateString()}</span>
-          <span>★ ${l.rating_avg.toFixed(1)} (${l.rating_count})</span>
-          <span>${l.sales} SOLD</span>
-          <span>${l.views} VIEWS</span>
+          <span>Vendor <strong>@${l.vendor_handle}</strong></span>
+          <span>Since ${new Date(l.vendor_since + 'Z').toLocaleDateString()}</span>
+          <span>★ ${l.rating_avg.toFixed(1)} (${l.rating_count} reviews)</span>
+          <span>${l.sales} sold</span>
+          <span>${l.views} views</span>
         </div>
-        <h3>// DESCRIPTION</h3>
-        <div class="desc">${esc(l.description).replace(/\n/g,'<br>')}</div>
-        <h3>// REVIEWS</h3>
+        <h3>Description</h3>
+        <div class="desc">${escapeHtml(l.description).replace(/\n/g,'<br>')}</div>
+        <h3>Reviews</h3>
         <div class="reviews">
           ${reviews.length ? reviews.map(v => `
             <div class="review">
-              <div class="rv-head">@${esc(v.buyer_handle)} <span class="stars">${'★'.repeat(v.stars)}${'☆'.repeat(5-v.stars)}</span>
+              <div class="rv-head">@${v.buyer_handle} <span class="stars">${'★'.repeat(v.stars)}${'☆'.repeat(5-v.stars)}</span>
                 <em>${new Date(v.created_at + 'Z').toLocaleDateString()}</em></div>
-              ${v.body ? `<p>${esc(v.body)}</p>` : ''}
-            </div>`).join('') : '<p class="muted">// no reviews yet</p>'}
+              ${v.body ? `<p>${escapeHtml(v.body)}</p>` : ''}
+            </div>`).join('') : '<p class="muted">No reviews yet.</p>'}
         </div>
       </div>
       <aside class="detail-side">
         <div class="card buycard">
           <div class="price big">$${l.price_usd.toLocaleString()}</div>
-          <div class="unit">per ${esc(l.unit)}</div>
-          <div class="stock">${l.stock > 0 ? `${l.stock} available` : 'out of stock'}</div>
-          <label>QUANTITY
+          <div class="unit">per ${l.unit}</div>
+          <div class="stock">${l.stock > 0 ? `${l.stock} available` : 'Out of stock'}</div>
+          <label>Quantity
             <input id="qty" type="number" min="1" max="${Math.max(1, l.stock)}" value="1">
           </label>
           <div class="summary">
-            <div><span>subtotal</span><strong id="subtotal">$${l.price_usd.toFixed(2)}</strong></div>
-            <div><span>escrow fee (5%)</span><strong id="fee">$${(l.price_usd*0.05).toFixed(2)}</strong></div>
-            <div class="total"><span>TOTAL</span><strong id="total">$${(l.price_usd*1.05).toFixed(2)}</strong></div>
+            <div><span>Subtotal</span><strong id="subtotal">$${l.price_usd.toFixed(2)}</strong></div>
+            <div><span>Escrow fee (5%)</span><strong id="fee">$${(l.price_usd*0.05).toFixed(2)}</strong></div>
+            <div class="total"><span>Total in escrow</span><strong id="total">$${(l.price_usd*1.05).toFixed(2)}</strong></div>
           </div>
           <button class="btn btn-primary btn-block" id="buyBtn" ${l.stock <= 0 ? 'disabled' : ''}>
-            ${l.stock > 0 ? 'BUY WITH ESCROW' : 'OUT OF STOCK'}
+            ${l.stock > 0 ? 'Buy with escrow' : 'Out of stock'}
           </button>
-          <p class="muted small">funds held in escrow until you confirm delivery</p>
+          <p class="muted small">Pay with Binance. Funds held in escrow until you confirm delivery.</p>
         </div>
       </aside>
     </div>
@@ -100,17 +109,35 @@
   qtyEl.addEventListener('input', recalc);
 
   document.getElementById('buyBtn').addEventListener('click', async () => {
-    if (!me?.user) { location.href = '/login.html?next=' + encodeURIComponent(location.pathname + location.search); return; }
+    if (!me?.user) {
+      location.href = '/login.html?next=' + encodeURIComponent(location.pathname + location.search);
+      return;
+    }
     const qty = Math.max(1, Math.min(l.stock, Number(qtyEl.value) || 1));
     const r = await fetch('/api/orders', {
-      method: 'POST', headers: {'Content-Type': 'application/json'},
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({ listing_id: l.id, qty })
     }).then(x => x.json());
     if (r.error) { alert(r.error); return; }
-    // show payment gate with amount
-    await window.BVGate.show(r.payment.amount);
-    location.href = '/orders.html?ref=' + r.order.ref;
+
+    openWallet({
+      amount: r.order.total,
+      ref: r.order.ref,
+      label: 'BlackVault — Order ' + r.order.ref
+    });
+
+    const modal = document.getElementById('walletModal');
+    const observer = new MutationObserver(() => {
+      if (!modal.classList.contains('open')) {
+        observer.disconnect();
+        location.href = '/orders.html?ref=' + r.order.ref;
+      }
+    });
+    observer.observe(modal, { attributes: true, attributeFilter: ['class'] });
   });
+
+  function escapeHtml(s) { return String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
 })();
 </script>
 </body>
