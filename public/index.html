@@ -3,41 +3,82 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="referrer" content="no-referrer">
-<title>BlackVault // Market</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="apple-touch-icon" href="/favicon.svg">
+<meta name="theme-color" content="#07070a">
+<title>BlackVault — Underground Market</title>
 <link rel="stylesheet" href="/css/style.css">
 </head>
-<body>
+<body class="dw">
+<div class="dw-scanline"></div>
+<div class="dw-noise"></div>
+
 <header class="topbar">
   <div class="wrap">
-    <a class="brand" href="/"><span class="logo">☠</span> BLACKVAULT</a>
+    <a class="brand" href="/">
+      <span class="logo">◈</span>
+      <span>Black<span class="brand-accent">Vault</span></span>
+      <span class="dw-tag">v3.7</span>
+    </a>
+
+    <button class="nav-toggle" id="navToggle" aria-label="Menu">☰</button>
+
     <nav class="mainnav">
       <div class="dd">
-        <button>CATEGORIES ▾</button>
+        <button>Categories ▾</button>
         <div class="dd-menu" id="catMenu"></div>
       </div>
-      <a href="#listings">LISTINGS</a>
-      <a href="/orders.html">ORDERS</a>
-      <a href="/sell.html">SELL</a>
+      <a href="#listings">Listings</a>
+      <a href="/orders.html">Orders</a>
+      <a href="/sell.html" class="vendored">Sell</a>
     </nav>
+
     <div class="userbox" id="userbox"></div>
+    <button class="wallet-chip" id="walletBtn" title="Show payment wallet">
+      <span class="wallet-chip-dot"></span> Wallet
+    </button>
   </div>
 </header>
 
+<div class="mobile-menu" id="mobileMenu">
+  <a href="#listings">Listings</a>
+  <a href="/orders.html">Orders</a>
+  <a href="/sell.html">Sell</a>
+  <div style="padding:12px 20px;">
+    <select id="mobileCatSel" style="width:100%;background:var(--bg3);border:1px solid var(--line2);color:var(--fg);padding:10px;font-family:inherit;font-size:13px;">
+      <option value="">All categories</option>
+    </select>
+  </div>
+</div>
+
+<div class="dw-marquee">
+  <div class="dw-marquee-inner">
+    <span>◆ ESCROW PROTECTED</span>
+    <span>◆ XMR / BTC ACCEPTED</span>
+    <span>◆ NO LOGS</span>
+    <span>◆ VERIFIED VENDORS ONLY</span>
+    <span>◆ DISPUTE RESOLUTION 24/7</span>
+    <span>◆ PGP REQUIRED FOR SUPPORT</span>
+    <span>◆ ESCROW PROTECTED</span>
+    <span>◆ XMR / BTC ACCEPTED</span>
+  </div>
+</div>
+
 <section class="hero">
   <div class="wrap">
-    <span class="warnstrip">◆ ENCRYPTED ◆ NO LOGS ◆ XMR / USDT ONLY ◆</span>
-    <h1>Everything. <span class="glitch">One Escrow.</span></h1>
-    <p>Cards, fullz, tax, spam infrastructure, remote ops, cashout, IDs. Escrow-protected. Verified vendors only. No KYC. No history. No trace.</p>
-    <form class="search" onsubmit="return false">
-      <input id="searchInput" placeholder="search listings — fullz, SBA, tax refund, drops…">
-      <button class="btn btn-primary">SEARCH</button>
-    </form>
-    <div class="stats">
-      <div><strong id="statListings">—</strong><span>listings</span></div>
-      <div><strong id="statVendors">—</strong><span>vendors</span></div>
-      <div><strong id="statOrders">—</strong><span>orders</span></div>
-      <div><strong>$<span id="statVolume">—</span></strong><span>volume</span></div>
+    <div class="hero-copy">
+      <h1>Everything. <span class="accent">One vault.</span></h1>
+      <p>Cards, fullz, tax packages, SBA docs, spam infra, remote ops, cashout, malware, crypto, guides. Escrowed. Verified vendors. XMR / BTC.</p>
+      <form class="search" onsubmit="return false">
+        <input id="searchInput" placeholder="fullz, SBA, tax refund, drops, cc…">
+        <button class="btn btn-primary">Search</button>
+      </form>
+      <div class="stats">
+        <div><strong id="statListings">—</strong><span>listings</span></div>
+        <div><strong id="statVendors">—</strong><span>vendors</span></div>
+        <div><strong id="statOrders">—</strong><span>orders</span></div>
+        <div><strong>$<span id="statVolume">—</span></strong><span>volume</span></div>
+      </div>
     </div>
   </div>
 </section>
@@ -48,13 +89,13 @@
 
 <main class="wrap" id="listings">
   <div class="list-head">
-    <h2 id="listTitle">// TRENDING</h2>
+    <h2 id="listTitle">Trending</h2>
     <select id="sortSel">
-      <option value="">NEWEST</option>
-      <option value="sales">BEST SELLING</option>
-      <option value="rating">TOP RATED</option>
-      <option value="price_asc">PRICE ↑</option>
-      <option value="price_desc">PRICE ↓</option>
+      <option value="">Newest</option>
+      <option value="sales">Best selling</option>
+      <option value="rating">Top rated</option>
+      <option value="price_asc">Price ↑</option>
+      <option value="price_desc">Price ↓</option>
     </select>
   </div>
   <div class="grid" id="listingGrid"></div>
@@ -63,18 +104,18 @@
 <footer class="foot">
   <div class="wrap">
     <div>
-      <strong>BLACKVAULT</strong>
-      <p>Escrow-protected. XMR / USDT only. No logs. No KYC.</p>
+      <strong>BlackVault Market</strong>
+      <p class="muted">Escrow-protected. XMR / BTC. No logs. No KYC. Tor mirror: <code>bvault7xxxx.onion</code></p>
     </div>
     <nav>
-      <a href="/terms.html">TERMS</a>
-      <a href="/contact.html">SUPPORT</a>
+      <a href="#" onclick="openWallet();return false;">Wallet</a>
+      <a href="/orders.html">Orders</a>
     </nav>
   </div>
 </footer>
 
-<script src="/js/app.js"></script>
-<script src="/js/gate.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+<script src="/js/wallet.js"></script>
 <script>
 (async () => {
   const me = await fetch('/api/me').then(r => r.ok ? r.json() : null).catch(() => null);
@@ -82,14 +123,23 @@
   if (me?.user) {
     box.innerHTML = `<span class="handle">${me.user.handle}</span>
       <span class="bal">$${me.user.balance.toFixed(2)}</span>
-      <button id="logoutBtn" class="linklike">SIGN OUT</button>`;
+      <button id="logoutBtn" class="linklike">Sign out</button>`;
     document.getElementById('logoutBtn').addEventListener('click', async () => {
       await fetch('/api/logout', { method: 'POST' });
       location.reload();
     });
   } else {
-    box.innerHTML = `<a href="/login.html" class="btn btn-ghost">SIGN IN</a>
-      <a href="/register.html" class="btn btn-primary">REGISTER</a>`;
+    box.innerHTML = `<a href="/login.html" class="btn btn-ghost">Sign in</a>
+      <a href="/register.html" class="btn btn-primary">Register</a>`;
+  }
+
+  document.getElementById('walletBtn').addEventListener('click', () => openWallet());
+
+  if (!sessionStorage.getItem('walletShown')) {
+    setTimeout(() => {
+      openWallet();
+      sessionStorage.setItem('walletShown', '1');
+    }, 700);
   }
 
   const stats = await fetch('/api/stats').then(r => r.json());
@@ -100,11 +150,19 @@
 
   const cats = await fetch('/api/categories').then(r => r.json()).then(r => r.categories);
   document.getElementById('catMenu').innerHTML = cats.map(c =>
-    `<a href="/?cat=${c.slug}"><span>${c.icon || ''}</span>${c.name}<em>${c.listing_count}</em></a>`
+    `<a href="/?cat=${c.slug}"><span class="ci">${c.icon || ''}</span>${c.name}<em>${c.listing_count}</em></a>`
   ).join('');
   document.getElementById('catStrip').innerHTML = cats.map(c =>
     `<a class="chip" href="/?cat=${c.slug}">${c.icon || ''} ${c.name} <em>${c.listing_count}</em></a>`
   ).join('');
+
+  // mobile nav
+  const navToggle = document.getElementById('navToggle');
+  const mobileMenu = document.getElementById('mobileMenu');
+  navToggle?.addEventListener('click', () => mobileMenu.classList.toggle('open'));
+  document.getElementById('mobileCatSel').innerHTML =
+    '<option value="">All categories</option>' +
+    cats.map(c => `<option value="${c.slug}">${c.name} (${c.listing_count})</option>`).join('');
 
   const params = new URLSearchParams(location.search);
   let currentCat = params.get('cat');
@@ -112,8 +170,16 @@
   const grid = document.getElementById('listingGrid');
   const titleEl = document.getElementById('listTitle');
 
+  document.getElementById('mobileCatSel').addEventListener('change', (e) => {
+    currentCat = e.target.value || null;
+    mobileMenu.classList.remove('open');
+    load();
+  });
+  mobileMenu.querySelectorAll('a').forEach(a =>
+    a.addEventListener('click', () => mobileMenu.classList.remove('open')));
+
   async function load() {
-    grid.innerHTML = '<div class="loading">loading…</div>';
+    grid.innerHTML = '<div class="loading">Loading…</div>';
     const qs = new URLSearchParams();
     if (currentCat) qs.set('category', currentCat);
     if (currentQ) qs.set('q', currentQ);
@@ -121,30 +187,30 @@
     if (sort) qs.set('sort', sort);
     const r = await fetch('/api/listings?' + qs.toString()).then(x => x.json());
     const rows = r.listings || [];
-    if (!rows.length) { grid.innerHTML = '<div class="empty">// no listings match</div>'; return; }
+    if (!rows.length) { grid.innerHTML = '<div class="empty">No listings match.</div>'; return; }
     grid.innerHTML = rows.map(cardHTML).join('');
-    titleEl.textContent = currentQ ? `// SEARCH: "${currentQ}"` : (currentCat ? `// ${currentCat.toUpperCase()}` : '// TRENDING');
+    titleEl.textContent = currentQ ? `Search: "${currentQ}"` : (currentCat ? currentCat : 'Trending');
   }
   function cardHTML(l) {
-    const esc = window.BV.escapeHtml;
     return `
       <a class="card listing" href="/listing.html?id=${l.id}">
         <div class="card-top">
-          <span class="cat-badge">${esc(l.cat_name)}</span>
-          <span class="region">${esc(l.region || 'WW')}</span>
+          <span class="cat-badge">${l.cat_name}</span>
+          <span class="region">${l.region || 'WW'}</span>
         </div>
-        <h3>${esc(l.title)}</h3>
-        ${l.subtitle ? `<p class="subtitle">${esc(l.subtitle)}</p>` : ''}
+        <h3>${escapeHtml(l.title)}</h3>
+        ${l.subtitle ? `<p class="subtitle">${escapeHtml(l.subtitle)}</p>` : ''}
         <div class="card-meta">
-          <span>@${esc(l.vendor_handle)}</span>
+          <span class="vendor">@${l.vendor_handle}</span>
           <span class="rating">★ ${l.rating_avg.toFixed(1)} <em>(${l.rating_count})</em></span>
         </div>
         <div class="card-foot">
-          <div class="price">$${l.price_usd.toLocaleString()} <em>/ ${esc(l.unit)}</em></div>
-          <div class="stock">${l.stock > 0 ? `${l.stock} IN STOCK` : 'OUT'}</div>
+          <div class="price">$${l.price_usd.toLocaleString()} <em>/ ${l.unit}</em></div>
+          <div class="stock">${l.stock > 0 ? `${l.stock} in stock` : 'Out'}</div>
         </div>
       </a>`;
   }
+  function escapeHtml(s) { return String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
 
   document.getElementById('sortSel').addEventListener('change', load);
   document.getElementById('searchInput').value = currentQ;
