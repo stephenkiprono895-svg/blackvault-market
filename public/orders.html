@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Orders — BlackVault</title>
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body class="dw">
+<div class="dw-scanline"></div>
+
+<header class="topbar">
+  <div class="wrap">
+    <a class="brand" href="/"><span class="logo">◈</span> BlackVault</a>
+    <nav><a href="/">Market</a><a href="/sell.html">Sell</a></nav>
+    <div class="userbox" id="userbox"></div>
+    <button class="wallet-chip" id="walletBtn"><span class="wallet-chip-dot"></span> Wallet</button>
+  </div>
+</header>
+
+<main class="wrap">
+  <h1>Your orders</h1>
+  <p class="muted">Escrow holds your funds until you confirm delivery.</p>
+  <div id="orders"><div class="loading">Loading…</div></div>
+
+  <section id="thread" class="thread" style="display:none">
+    <h2 id="threadTitle"></h2>
+    <div class="thread-body" id="threadBody"></div>
+    <form id="msgForm" class="msg-form">
+      <input id="msgBody" placeholder="Message vendor / buyer…" autocomplete="off">
+      <button class="btn btn-primary">Send</button>
+    </form>
+    <div class="thread-actions" id="threadActions"></div>
+  </section>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+<script src="/js/wallet.js"></script>
+<script>
+(async () => {
+  const me = await fetch('/api/me').then(r => r.ok ? r.json() : null).catch(() => null);
+  if (!me?.user) { location.href = '/login.html?next=/orders.html'; return; }
+  document.getElementById('userbox').innerHTML = `<span class="handle">${me.user.handle}</span><span class="bal">$${me.user.balance.toFixed(2)}</span>`;
+  document.getElementById('walletBtn').addEventListener('click', () => openWallet());
+
+  async function loadList() {
+    const r = await fetch('/api/orders').then(x => x.json());
+    const rows = r.orders || [];
+    const el = document.getElementById('orders');
+    if (!rows.length) { el.innerHTML = '<div class="empty">No orders yet. <a href="/">Browse the market.</a></div>'; return; }
+    el.innerHTML = rows.map(o => `
+      <div class="card order-row">
+        <div>
+          <div class="ref">${o.ref}</div>
+          <div class="muted small">${new Date(o.created_at + 'Z').toLocaleString()} · ${o.vendor_handle === me.user.handle ? 'Selling to @'+o.buyer_handle : 'Buying from @'+o.vendor_handle}</div>
+          <div class="title">${escapeHtml(o.title)} × ${o.qty}</div>
+        </div>
+        <div class="order-right">
+          <span class="pill pill-${o.status}">${o.status}</span>
+          <strong>$${o.total.toFixed(2)}</strong>
+          <button class="btn btn-ghost" data-ref="${o.ref}">Open</button>
+        </div>
+      </div>
+    `).join('');
+    document.querySelectorAll('[data-ref]').forEach(b => b.addEventListener('click', () => openThread(b.dataset.ref)));
+  }
+
+  async function openThread(ref) {
+    const r = await fetch('/api/orders/' + ref).then(x => x.json());
+    if (r.error) return;
+    const o = r.order, msgs = r.messages || [];
+    const thread = document.getElementById('thread');
+    thread.style.display = 'block';
+    document.getElementById('threadTitle').textContent = `${o.ref} — ${o.title} — $${o.total.toFixed(2)} [${o.status}]`;
+    document.getElementById('threadBody').innerHTML = msgs.map(m => `
+      <div class="msg ${m.from_id === me.user.id ? 'mine' : ''}">
+        <div class="msg-head">@${m.from_handle} · ${new Date(m.created_at + 'Z').toLocaleTimeString()}</div>
+        <div class="msg-body">${escapeHtml(m.body).replace(/\n/g,'<br>')}</div>
+      </div>
+    `).join('') || '<p class="muted">No messages yet.</p>';
+
+    const act = document.getElementById('threadActions');
+    act.innerHTML = '';
+
+    if (o.buyer_id === me.user.id && o.status === 'escrow') {
+      act.innerHTML = `
+        <button class="btn btn-primary" id="payBtn">Show payment wallet</button>
+        <button class="btn btn-primary" id="relBtn">Release escrow</button>
+        <button class="btn btn-ghost" id="disBtn">Dispute</button>
+      `;
+      document.getElementById('payBtn').addEventListener('click', () => {
+        openWallet({ amount: o.total, ref: o.ref, label: 'BlackVault — Order ' + o.ref });
+      });
+      document.getElementById('relBtn').addEventListener('click', async () => {
+        if (!confirm('Release funds to vendor? This cannot be undone.')) return;
+        const r = await fetch(`/api/orders/${o.ref}/release`, { method: 'POST' }).then(x => x.json());
+        if (r.error) { alert(r.error); return; }
+        openThread(ref); loadList();
+      });
+      document.getElementById('disBtn').addEventListener('click', async () => {
+        const r = await fetch(`/api/orders/${o.ref}/dispute`, { method: 'POST' }).then(x => x.json());
+        if (r.error) { alert(r.error); return; }
+        openThread(ref); loadList();
+      });
+    }
+
+    if (o.buyer_id === me.user.id && o.status === 'released') {
+      act.innerHTML = `<button class="btn btn-primary" id="revBtn">Leave review</button>`;
+      document.getElementById('revBtn').addEventListener('click', async () => {
+        const stars = prompt('Stars 1-5', '5');
+        const body = prompt('Review text (optional)', '');
+        const r = await fetch(`/api/orders/${o.ref}/review`, {
+          method: 'POST', headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({ stars: Number(stars), body })
+        }).then(x => x.json());
+        if (r.error) { alert(r.error); return; }
+        alert('Review posted.');
+      });
+    }
+
+    if (o.vendor_id === me.user.id && o.status === 'escrow') {
+      act.innerHTML = `<span class="muted">Waiting for buyer to confirm delivery.</span>`;
+    }
+
+    document.getElementById('msgForm').onsubmit = async (e) => {
+      e.preventDefault();
+      const body = document.getElementById('msgBody').value.trim();
+      if (!body) return;
+      await fetch(`/api/orders/${o.ref}/messages`, {
+        method: 'POST', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ body })
+      });
+      document.getElementById('msgBody').value = '';
+      openThread(ref);
+    };
+  }
+
+  function escapeHtml(s) { return String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
+  await loadList();
+  const ref = new URLSearchParams(location.search).get('ref');
+  if (ref) openThread(ref);
+})();
+</script>
+</body>
+</html>

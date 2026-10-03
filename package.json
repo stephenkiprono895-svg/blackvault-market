@@ -1,0 +1,22 @@
+{
+  "name": "blackvault",
+  "version": "1.0.0",
+  "private": true,
+  "type": "commonjs",
+  "engines": { "node": ">=20.0.0" },
+  "scripts": {
+    "start": "node seed.js && node server.js",
+    "dev": "node server.js",
+    "seed": "node seed.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "better-sqlite3": "^11.3.0",
+    "express-session": "^1.18.0",
+    "connect-sqlite3": "^0.9.15",
+    "bcryptjs": "^2.4.3",
+    "helmet": "^7.1.0",
+    "express-rate-limit": "^7.4.0",
+    "dotenv": "^16.4.5"
+  }
+}

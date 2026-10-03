@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<title>BlackVault // Market</title>
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<header class="topbar">
+  <div class="wrap">
+    <a class="brand" href="/"><span class="logo">☠</span> BLACKVAULT</a>
+    <nav class="mainnav">
+      <div class="dd">
+        <button>CATEGORIES ▾</button>
+        <div class="dd-menu" id="catMenu"></div>
+      </div>
+      <a href="#listings">LISTINGS</a>
+      <a href="/orders.html">ORDERS</a>
+      <a href="/sell.html">SELL</a>
+    </nav>
+    <div class="userbox" id="userbox"></div>
+  </div>
+</header>
+
+<section class="hero">
+  <div class="wrap">
+    <span class="warnstrip">◆ ENCRYPTED ◆ NO LOGS ◆ XMR / USDT ONLY ◆</span>
+    <h1>Everything. <span class="glitch">One Escrow.</span></h1>
+    <p>Cards, fullz, tax, spam infrastructure, remote ops, cashout, IDs. Escrow-protected. Verified vendors only. No KYC. No history. No trace.</p>
+    <form class="search" onsubmit="return false">
+      <input id="searchInput" placeholder="search listings — fullz, SBA, tax refund, drops…">
+      <button class="btn btn-primary">SEARCH</button>
+    </form>
+    <div class="stats">
+      <div><strong id="statListings">—</strong><span>listings</span></div>
+      <div><strong id="statVendors">—</strong><span>vendors</span></div>
+      <div><strong id="statOrders">—</strong><span>orders</span></div>
+      <div><strong>$<span id="statVolume">—</span></strong><span>volume</span></div>
+    </div>
+  </div>
+</section>
+
+<nav class="catstrip">
+  <div class="wrap" id="catStrip"></div>
+</nav>
+
+<main class="wrap" id="listings">
+  <div class="list-head">
+    <h2 id="listTitle">// TRENDING</h2>
+    <select id="sortSel">
+      <option value="">NEWEST</option>
+      <option value="sales">BEST SELLING</option>
+      <option value="rating">TOP RATED</option>
+      <option value="price_asc">PRICE ↑</option>
+      <option value="price_desc">PRICE ↓</option>
+    </select>
+  </div>
+  <div class="grid" id="listingGrid"></div>
+</main>
+
+<footer class="foot">
+  <div class="wrap">
+    <div>
+      <strong>BLACKVAULT</strong>
+      <p>Escrow-protected. XMR / USDT only. No logs. No KYC.</p>
+    </div>
+    <nav>
+      <a href="/terms.html">TERMS</a>
+      <a href="/contact.html">SUPPORT</a>
+    </nav>
+  </div>
+</footer>
+
+<script src="/js/app.js"></script>
+<script src="/js/gate.js"></script>
+<script>
+(async () => {
+  const me = await fetch('/api/me').then(r => r.ok ? r.json() : null).catch(() => null);
+  const box = document.getElementById('userbox');
+  if (me?.user) {
+    box.innerHTML = `<span class="handle">${me.user.handle}</span>
+      <span class="bal">$${me.user.balance.toFixed(2)}</span>
+      <button id="logoutBtn" class="linklike">SIGN OUT</button>`;
+    document.getElementById('logoutBtn').addEventListener('click', async () => {
+      await fetch('/api/logout', { method: 'POST' });
+      location.reload();
+    });
+  } else {
+    box.innerHTML = `<a href="/login.html" class="btn btn-ghost">SIGN IN</a>
+      <a href="/register.html" class="btn btn-primary">REGISTER</a>`;
+  }
+
+  const stats = await fetch('/api/stats').then(r => r.json());
+  document.getElementById('statListings').textContent = stats.listings;
+  document.getElementById('statVendors').textContent = stats.vendors;
+  document.getElementById('statOrders').textContent = stats.orders;
+  document.getElementById('statVolume').textContent = Math.round(stats.volume).toLocaleString();
+
+  const cats = await fetch('/api/categories').then(r => r.json()).then(r => r.categories);
+  document.getElementById('catMenu').innerHTML = cats.map(c =>
+    `<a href="/?cat=${c.slug}"><span>${c.icon || ''}</span>${c.name}<em>${c.listing_count}</em></a>`
+  ).join('');
+  document.getElementById('catStrip').innerHTML = cats.map(c =>
+    `<a class="chip" href="/?cat=${c.slug}">${c.icon || ''} ${c.name} <em>${c.listing_count}</em></a>`
+  ).join('');
+
+  const params = new URLSearchParams(location.search);
+  let currentCat = params.get('cat');
+  let currentQ = params.get('q') || '';
+  const grid = document.getElementById('listingGrid');
+  const titleEl = document.getElementById('listTitle');
+
+  async function load() {
+    grid.innerHTML = '<div class="loading">loading…</div>';
+    const qs = new URLSearchParams();
+    if (currentCat) qs.set('category', currentCat);
+    if (currentQ) qs.set('q', currentQ);
+    const sort = document.getElementById('sortSel').value;
+    if (sort) qs.set('sort', sort);
+    const r = await fetch('/api/listings?' + qs.toString()).then(x => x.json());
+    const rows = r.listings || [];
+    if (!rows.length) { grid.innerHTML = '<div class="empty">// no listings match</div>'; return; }
+    grid.innerHTML = rows.map(cardHTML).join('');
+    titleEl.textContent = currentQ ? `// SEARCH: "${currentQ}"` : (currentCat ? `// ${currentCat.toUpperCase()}` : '// TRENDING');
+  }
+  function cardHTML(l) {
+    const esc = window.BV.escapeHtml;
+    return `
+      <a class="card listing" href="/listing.html?id=${l.id}">
+        <div class="card-top">
+          <span class="cat-badge">${esc(l.cat_name)}</span>
+          <span class="region">${esc(l.region || 'WW')}</span>
+        </div>
+        <h3>${esc(l.title)}</h3>
+        ${l.subtitle ? `<p class="subtitle">${esc(l.subtitle)}</p>` : ''}
+        <div class="card-meta">
+          <span>@${esc(l.vendor_handle)}</span>
+          <span class="rating">★ ${l.rating_avg.toFixed(1)} <em>(${l.rating_count})</em></span>
+        </div>
+        <div class="card-foot">
+          <div class="price">$${l.price_usd.toLocaleString()} <em>/ ${esc(l.unit)}</em></div>
+          <div class="stock">${l.stock > 0 ? `${l.stock} IN STOCK` : 'OUT'}</div>
+        </div>
+      </a>`;
+  }
+
+  document.getElementById('sortSel').addEventListener('change', load);
+  document.getElementById('searchInput').value = currentQ;
+  document.querySelector('form.search').addEventListener('submit', () => {
+    currentQ = document.getElementById('searchInput').value.trim();
+    load();
+  });
+
+  load();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,34 @@
+services:
+  - type: web
+    name: blackvault
+    runtime: node
+    plan: free
+    region: oregon
+    branch: main
+    autoDeploy: true
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /api/stats
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: SESSION_SECRET
+        generateValue: true
+      - key: PLATFORM_FEE
+        value: "0.05"
+      - key: DATA_DIR
+        value: /opt/render/project/src/data
+      - key: BINANCE_ADDRESS
+        sync: false
+      - key: BINANCE_NETWORK
+        value: "BSC (BEP20)"
+      - key: BINANCE_ASSET
+        value: "USDT"
+      - key: BINANCE_MEMO
+        sync: false
+      - key: SUPPORT_XMR
+        sync: false
+      - key: SUPPORT_EMAIL
+        value: "support@blackvault.example"
