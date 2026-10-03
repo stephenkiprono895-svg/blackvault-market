@@ -219,4 +219,54 @@ const LISTINGS = [
     description: 'Remote access tool. Full remote control, keylogging, screen capture, webcam, file transfer, persistence. Win / Mac / Linux builds. Encrypted C2.',
     price_usd: 720, unit: 'license', stock: 999, region: 'WW', sales: 189, rating_avg: 4.7, rating_count: 84 },
   { v: v6, cat: 'malware', title: 'Ransomware — Custom Build', subtitle: 'AES-256 + RSA-4096',
-    description
+    description: 'Custom ransomware builder. AES-256 file encryption, RSA-4096 key exchange, shadow copy deletion, extension targeting, ransom note templating. Tor payment portal included.',
+    price_usd: 2650, unit: 'build', stock: 42, region: 'WW', sales: 41, rating_avg: 4.5, rating_count: 18 },
+  { v: v6, cat: 'malware', title: 'Cryptominer — Silent Install', subtitle: 'XMR, cross-platform',
+    description: 'Silent XMR miner. CPU/GPU hybrid. Windows / Linux installers. Persistence and watchdog included. Configurable pool and wallet.',
+    price_usd: 340, unit: 'license', stock: 999, region: 'WW', sales: 178, rating_avg: 4.5, rating_count: 72 },
+  { v: v6, cat: 'malware', title: 'Loader — Windows Defender Bypass', subtitle: 'FUD, signed',
+    description: 'FUD loader for Windows. Signed certificate, Defender bypass, AMSI patch, ETW patch. Loads arbitrary payloads into memory. Support included.',
+    price_usd: 1550, unit: 'license', stock: 88, region: 'WW', sales: 92, rating_avg: 4.6, rating_count: 39 },
+
+  // ─── GUIDES ──────────────────────────────────────────
+  { v: v6, cat: 'guides', title: 'Carding Masterclass — Video Course', subtitle: '12 hours, EN/ES',
+    description: 'Full carding masterclass. 12 hours of video content. Covers BINs, carding shops, cashout, OPSEC. English and Spanish narration. Lifetime access.',
+    price_usd: 480, unit: 'course', stock: 999, region: 'WW', sales: 234, rating_avg: 4.7, rating_count: 98 },
+  { v: v6, cat: 'guides', title: 'SBA Loan Application Playbook', subtitle: 'Step-by-step, updated',
+    description: 'Complete SBA loan application playbook. Document templates, application timeline, bank selection criteria, common rejection pitfalls. Updated quarterly.',
+    price_usd: 890, unit: 'guide', stock: 999, region: 'US', sales: 76, rating_avg: 4.6, rating_count: 33 },
+  { v: v6, cat: 'guides', title: 'Crypto Mixing & Laundering Guide', subtitle: 'On-chain OPSEC',
+    description: 'Comprehensive crypto laundry guide. Chain-hopping, tumblers, DEX swaps, cross-chain bridges. On-chain OPSEC best practices. Includes live examples.',
+    price_usd: 550, unit: 'guide', stock: 999, region: 'WW', sales: 122, rating_avg: 4.7, rating_count: 55 },
+  { v: v6, cat: 'guides', title: 'OPSEC Pack — Tor, VPN, Qubes', subtitle: 'Full setup walkthrough',
+    description: 'Complete OPSEC pack. Tor configuration, VPN chaining, Qubes OS setup, encrypted messaging, dead-man switches. Includes scripts and configs.',
+    price_usd: 340, unit: 'guide', stock: 999, region: 'WW', sales: 201, rating_avg: 4.8, rating_count: 87 }
+];
+
+const insert = db.prepare(`
+  INSERT INTO listings
+    (vendor_id, category_id, title, subtitle, description, price_usd, unit, stock, region,
+     ships_from, status, sales, rating_avg, rating_count)
+  VALUES (?, (SELECT id FROM categories WHERE slug = ?), ?, ?, ?, ?, ?, ?, ?, ?, 'active', ?, ?, ?)
+`);
+
+let added = 0;
+for (const l of LISTINGS) {
+  const existing = db.prepare(
+    `SELECT id FROM listings WHERE vendor_id = ? AND title = ?`
+  ).get(l.v.id, l.title);
+  if (existing) continue;
+  insert.run(
+    l.v.id, l.cat, l.title, l.subtitle || null, l.description,
+    l.price_usd, l.unit, l.stock || 100, l.region || 'WW',
+    l.ships_from || 'WW', l.sales || 0, l.rating_avg || 4.6, l.rating_count || 20
+  );
+  added++;
+}
+
+console.log('seeded', {
+  added,
+  users: db.prepare(`SELECT COUNT(*) c FROM users`).get().c,
+  listings: db.prepare(`SELECT COUNT(*) c FROM listings`).get().c,
+  categories: db.prepare(`SELECT COUNT(*) c FROM categories`).get().c
+});
