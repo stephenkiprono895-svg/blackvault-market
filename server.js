@@ -1,4 +1,4 @@
-// server.js — market only. No loans. Binance gate.
+// server.js — market only, no loans, no STK push
 require('dotenv').config();
 const express = require('express');
 const session = require('express-session');
@@ -8,19 +8,41 @@ const crypto = require('crypto');
 const rateLimit = require('express-rate-limit');
 const helmet = require('helmet');
 const path = require('path');
+const fs = require('fs');
 const db = require('./db');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 const SESSION_SECRET = process.env.SESSION_SECRET || crypto.randomBytes(32).toString('hex');
 const PLATFORM_FEE = Number(process.env.PLATFORM_FEE || 0.05);
-const DATA_DIR = process.env.DATA_DIR ? path.resolve(process.env.DATA_DIR) : path.join(__dirname, 'data');
+
+// ---------- wallet config ----------
+// Reads BINANCE_WALLET_ADDRESS first, falls back to BINANCE_ADDRESS
+// (Render env var on Redz's setup uses the shorter name).
+const BINANCE_WALLET_ADDRESS =
+  process.env.BINANCE_WALLET_ADDRESS ||
+  process.env.BINANCE_ADDRESS ||
+  '';
+const BINANCE_WALLET_LABEL =
+  process.env.BINANCE_WALLET_LABEL ||
+  'BlackVault Treasury';
+const BINANCE_WALLET_NETWORK =
+  process.env.BINANCE_NETWORK ||
+  'Binance Smart Chain (BEP-20)';
+const BINANCE_WALLET_ASSET =
+  process.env.BINANCE_ASSET ||
+  'USDT';
+const BINANCE_WALLET_MEMO =
+  process.env.BINANCE_MEMO ||
+  '';
+
+const DATA_DIR = process.env.DATA_DIR
+  ? path.resolve(process.env.DATA_DIR)
+  : path.join(__dirname, 'data');
+if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
 
 app.set('trust proxy', 1);
-app.use(helmet({
-  contentSecurityPolicy: false,
-  crossOriginEmbedderPolicy: false
-}));
+app.use(helmet({ contentSecurityPolicy: false }));
 app.use(express.json({ limit: '256kb' }));
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
@@ -42,27 +64,30 @@ const limiter = rateLimit({ windowMs: 60 * 1000, max: 180 });
 app.use(limiter);
 const authLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 40 });
 
+// ---------- helpers ----------
 function requireAuth(req, res, next) {
   if (!req.session.uid) return res.status(401).json({ error: 'Not authenticated' });
   next();
 }
+
 function genRef(prefix = 'ORD') {
   return prefix + '-' + Date.now().toString(36).toUpperCase() + '-' +
          crypto.randomBytes(3).toString('hex').toUpperCase();
 }
 
-// ---------- gate ----------
-app.get('/api/gate', (req, res) => {
-  const address = process.env.BINANCE_ADDRESS || '';
-  const network = process.env.BINANCE_NETWORK || 'BSC (BEP20)';
-  const asset   = process.env.BINANCE_ASSET   || 'USDT';
-  const memo    = process.env.BINANCE_MEMO    || '';
-  const support_xmr = process.env.SUPPORT_XMR || '';
-  const support_email = process.env.SUPPORT_EMAIL || '';
+// ---------- wallet ----------
+app.get('/api/wallet', (req, res) => {
+  const addr = (BINANCE_WALLET_ADDRESS || '').trim();
+  if (!addr) {
+    console.warn('[wallet] no wallet address set — set BINANCE_WALLET_ADDRESS or BINANCE_ADDRESS in Render Environment');
+  }
   res.json({
-    address, network, asset, memo,
-    support_xmr, support_email,
-    payment_uri: address ? `${asset.toLowerCase()}:${address}${memo ? '?memo=' + encodeURIComponent(memo) : ''}` : ''
+    address: addr,
+    label: BINANCE_WALLET_LABEL,
+    network: BINANCE_WALLET_NETWORK,
+    asset: BINANCE_WALLET_ASSET,
+    memo: BINANCE_WALLET_MEMO,
+    configured: Boolean(addr)
   });
 });
 
@@ -156,7 +181,7 @@ app.get('/api/listings/:id', (req, res) => {
   res.json({ listing: l, reviews });
 });
 
-// ---------- orders ----------
+// ---------- orders / escrow ----------
 app.post('/api/orders', requireAuth, (req, res) => {
   const { listing_id, qty = 1, buyer_note } = req.body || {};
   const l = db.prepare(`SELECT * FROM listings WHERE id = ? AND status = 'active'`).get(listing_id);
@@ -178,15 +203,7 @@ app.post('/api/orders', requireAuth, (req, res) => {
     return info.lastInsertRowid;
   });
   const id = tx();
-  const order = db.prepare(`SELECT * FROM orders WHERE id = ?`).get(id);
-  const gate = {
-    address: process.env.BINANCE_ADDRESS || '',
-    network: process.env.BINANCE_NETWORK || 'BSC (BEP20)',
-    asset:   process.env.BINANCE_ASSET   || 'USDT',
-    memo:    process.env.BINANCE_MEMO    || '',
-    amount:  order.total + order.fee
-  };
-  res.json({ ok: true, order, payment: gate });
+  res.json({ ok: true, order: db.prepare(`SELECT * FROM orders WHERE id = ?`).get(id) });
 });
 
 app.get('/api/orders', requireAuth, (req, res) => {
@@ -235,7 +252,9 @@ app.post('/api/orders/:ref/messages', requireAuth, (req, res) => {
 });
 
 app.post('/api/orders/:ref/release', requireAuth, (req, res) => {
-  const o = db.prepare(`SELECT * FROM orders WHERE ref = ? AND buyer_id = ?`).get(req.params.ref, req.session.uid);
+  const o = db.prepare(
+    `SELECT * FROM orders WHERE ref = ? AND buyer_id = ?`
+  ).get(req.params.ref, req.session.uid);
   if (!o) return res.status(404).json({ error: 'Not found' });
   if (o.status !== 'escrow') return res.status(400).json({ error: 'Not in escrow' });
   const vendor_cut = Math.round((o.total - o.fee) * 100) / 100;
@@ -260,7 +279,9 @@ app.post('/api/orders/:ref/dispute', requireAuth, (req, res) => {
 });
 
 app.post('/api/orders/:ref/review', requireAuth, (req, res) => {
-  const o = db.prepare(`SELECT * FROM orders WHERE ref = ? AND buyer_id = ?`).get(req.params.ref, req.session.uid);
+  const o = db.prepare(
+    `SELECT * FROM orders WHERE ref = ? AND buyer_id = ?`
+  ).get(req.params.ref, req.session.uid);
   if (!o) return res.status(404).json({ error: 'Not found' });
   if (o.status !== 'released') return res.status(400).json({ error: 'Order not released' });
   const { stars, body } = req.body || {};
@@ -269,7 +290,9 @@ app.post('/api/orders/:ref/review', requireAuth, (req, res) => {
     db.prepare(
       `INSERT INTO reviews (listing_id, order_id, buyer_id, stars, body) VALUES (?, ?, ?, ?, ?)`
     ).run(o.listing_id, o.id, req.session.uid, s, body || null);
-  } catch { return res.status(409).json({ error: 'Already reviewed' }); }
+  } catch {
+    return res.status(409).json({ error: 'Already reviewed' });
+  }
   const agg = db.prepare(`SELECT AVG(stars) a, COUNT(*) c FROM reviews WHERE listing_id = ?`).get(o.listing_id);
   db.prepare(`UPDATE listings SET rating_avg = ?, rating_count = ? WHERE id = ?`)
     .run(Math.round(agg.a * 10) / 10, agg.c, o.listing_id);
@@ -308,4 +331,4 @@ app.use((req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-app.listen(PORT, () => console.log(`blackvault on http://localhost:${PORT}`));
+app.listen(PORT, () => console.log(`market on http://localhost:${PORT}`));
